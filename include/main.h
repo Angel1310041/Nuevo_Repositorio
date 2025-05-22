@@ -4,9 +4,12 @@
 #include <Arduino.h>
 #include <Keypad.h>
 #include <EEPROM.h>
+#include <AsyncTCP.h>
 #include <RCSwitch.h>
 #include "esp_task_wdt.h"
-
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
+#include <ESPAsyncWebServer.h>
 #define LED_PIN 35
 #define MQ6_PIN 19
 #define prog 0
@@ -23,7 +26,8 @@ extern const char* TipoSensor[9][2];
 extern boolean variableDetectada;
 extern byte rowPins[ROWS];
 extern byte colPins[COLS];
-
+extern bool modoprog;
+void imprimir(String m, String c="");
 
 void setup();
 void loop();

@@ -99,7 +99,8 @@ void manejarEntradas() {
     if (!progStart) progStart = millis();
     if (!modoprog && millis() - progStart >= 2000 && !esperandoLiberar) {
       modoprog = esperandoLiberar = true;
-      digitalWrite(LED_PIN, HIGH);
+      //digitalWrite(LED_PIN, HIGH);
+      entrarmodoprog();
       Heltec.display->clear();
       Heltec.display->drawXbm(0, 0, 128, 64, img4); 
       Heltec.display->display();
