@@ -1,0 +1,1 @@
+La version 2.1.1.1 no esta enviando la señal RF porque la funcion enviarRF_Matriz esta vacia.
