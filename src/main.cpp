@@ -5,7 +5,7 @@
 #include <RCSwitch.h>
 #include <heltec.h>
 
-String Version = "2.1.2.4";
+String Version = "2.1.2.5";
 
 const int EEPROM_SIZE = 512;
 boolean debug = true, variableDetectada = false;
