@@ -11,7 +11,7 @@
 #include <ArduinoJson.h>
 #include <ESPAsyncWebServer.h>
 #define LED_PIN 35
-#define MQ6_PIN 19
+#define MQ6_PIN 48
 #define prog 0
 #define ROWS 3
 #define COLS 3

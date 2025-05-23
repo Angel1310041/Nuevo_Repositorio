@@ -31,7 +31,7 @@ int matrizTipoSensor[ROWS][COLS] = {
   {6, 7, 0}
 };
 
-void imprimir(String m, String c=""){
+void imprimir(String m, String c){
   if(!debug) return;
   const char*col="\033[0m";
   if(c=="rojo") col="\033[31m";
@@ -41,6 +41,11 @@ void imprimir(String m, String c=""){
   Serial.print(col); Serial.println(m); Serial.print("\033[0m");
 }
 
+void enviarPorLora(String mensaje) {
+    // Aquí va tu lógica real para enviar por LoRa
+    // Ejemplo:
+    enviarPorLora(mensaje); // O la función que uses realmente
+}
 // Muestra la imagen correspondiente según el tipo de sensor
 void mostrarImagenPorTipoSensor(int tipoSensor) {
     switch (tipoSensor) {
