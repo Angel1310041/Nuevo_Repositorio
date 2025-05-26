@@ -1,7 +1,7 @@
 #include "Pantalla.h"
 #include <heltec.h>
 
-unsigned long tiempoUltimaImagen = 0;
+//unsigned long tiempoUltimaImagen = 0;
 int imagenActual = 0;
 
 extern const unsigned char img1[];
@@ -11,7 +11,7 @@ extern const unsigned char img4[];
 extern const unsigned char img5[];
 extern const unsigned char img6[];
 
-void alternarImagen() {
+/*void alternarImagen() {
     unsigned long tiempoActual = millis();
     if (tiempoActual - tiempoUltimaImagen >= 500) { 
         imagenActual = (imagenActual + 1) % 6; 
@@ -33,4 +33,4 @@ void alternarImagen() {
         Heltec.display->drawXbm(0, 0, 128, 64, img6);
     }
     Heltec.display->display();
-}
+}*/
