@@ -28,8 +28,10 @@ void imprimir(String m, String c) {
 }
 
 void enviarPorLora(String mensaje) {
-  // Implementación real aquí
-  Serial.println("Lora: " + mensaje); // Temporal
+  LoRa.beginPacket();
+  LoRa.print(mensaje);
+  LoRa.endPacket();
+  Serial.println("Lora enviado: " + mensaje);
 }
 
 void mostrarImagen(const unsigned char* imagen, int tipo = 2) {
@@ -143,6 +145,7 @@ void setup() {
   EEPROM.begin(EEPROM_SIZE);
   pinMode(MQ6_PIN, INPUT);
   pinMode(LED_PIN, OUTPUT);
+  pinMode(prog, INPUT_PULLUP);
   pinMode(prog, INPUT_PULLUP);
   pinMode(BOTON_PRUEBA_PIN, INPUT_PULLUP);
 
