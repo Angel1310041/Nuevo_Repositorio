@@ -59,10 +59,14 @@ void mostrarImagenPorTipoSensor(int tipoSensor) {
       break;
     case 3:
     case 4:
+      mostrarImagen(img8);
+      break;
     case 5:
     case 6:
+     mostrarImagen(img6);
+      break;
     case 7:
-      mostrarImagen(img6);
+      mostrarImagen(img7);
       break;
     case 9:
       mostrarImagen(img2);
