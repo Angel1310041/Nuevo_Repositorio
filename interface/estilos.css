@@ -1,0 +1,239 @@
+body {
+    background-color: #E8F5E9;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 18px;
+    margin: 0;
+    padding: 0;
+}
+
+.Menu {
+    position: fixed;
+    top: 2.5%;
+    left: 2.5%;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    width: 38px;
+    height: 38px;
+    justify-content: center;
+    gap: 7px;
+    z-index: 1100;
+}
+.Menu div {
+    background-color: #096B68;
+    height: 4px;
+    border-radius: 2px;
+    width: 100%;
+    transition: 0.3s;
+}
+
+.header {
+    background: linear-gradient(90deg, #6FE6FC 60%, #CAE8BD 100%);
+    padding: 12px 0;
+    text-align: center;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    min-height: 70px;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2;
+    box-shadow: 0 2px 12px rgba(9,107,104,0.08);
+}
+.header img {
+    height: 4rem;
+    width: 4rem;
+    margin-left: 10px;
+}
+
+.menuu {
+    position: fixed;
+    top: 0;
+    left: -220px;
+    width: 220px;
+    height: 100%;
+    background: #4E71FF;
+    color: #fff;
+    box-shadow: 2px 0 8px #64E2B7;
+    transition: left 0.3s;
+    z-index: 1050;
+    padding-top: 80px;
+    display: block;
+}
+.menuu.activo {
+    left: 0;
+}
+.menuu .submenu {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 0 18px;
+}
+.menuu .submenu a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 1.1em;
+    padding: 10px 0;
+    border-bottom: 1px solid #444;
+    transition: background 0.2s, color 0.2s;
+    cursor: pointer;
+    border-radius: 4px;
+}
+.menuu .submenu a:hover {
+    background: #3a4ba0;
+    color: #ffd700;
+}
+
+#pantalla-carga {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.8);
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+.loader {
+    display: flex;
+    gap: 10px;
+}
+.loader div {
+    width: 20px;
+    height: 20px;
+    background: #096B68;
+    border-radius: 50%;
+    animation: bounce 0.8s infinite alternate;
+}
+.loader div:nth-child(2) { animation-delay: 0.2s; }
+.loader div:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce {
+    to {
+        transform: translateY(-30px);
+        opacity: 0.5;
+    }
+}
+
+/* Tarjetas principales */
+#apartado-inicio,
+#apartado-pruebas,
+#apartado-parametros {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(9,107,104,0.10);
+    max-width: 400px;
+    margin: 110px auto 0 auto;
+    padding: 32px 24px 24px 24px;
+    text-align: center;
+    transition: box-shadow 0.3s;
+}
+
+#apartado-inicio h2,
+#apartado-pruebas h2,
+#apartado-parametros h2 {
+    color: #096B68;
+    margin-bottom: 18px;
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+}
+
+#apartado-inicio strong {
+    color: #096B68;
+}
+
+/* Botones generales */
+#apartado-pruebas button,
+#apartado-parametros button,
+#apartado-inicio button,
+#btn-enviar-rf,
+#btn-guardar-parametros {
+    background: linear-gradient(90deg, #096B68 70%, #0bbfae 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 0;
+    width: 90%;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(9,107,104,0.08);
+    margin: 0 auto 10px auto;
+    display: block;
+    transition: background 0.2s, transform 0.2s;
+}
+#apartado-pruebas button:hover,
+#apartado-parametros button:hover,
+#apartado-inicio button:hover,
+#btn-enviar-rf:hover,
+#btn-guardar-parametros:hover {
+    background: linear-gradient(90deg, #0bbfae 60%, #096B68 100%);
+    transform: translateY(-2px) scale(1.03);
+}
+
+/* Lista de botones de pruebas */
+#lista-pantallas {
+    list-style: none;
+    padding: 0;
+    margin: 0 auto;
+    max-width: 220px;
+}
+#lista-pantallas li {
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: center;
+}
+#lista-pantallas li:last-child {
+    margin-bottom: 0;
+}
+
+/* Inputs y formularios */
+#form-parametros label {
+    color: #333;
+    font-size: 1rem;
+    margin-bottom: 4px;
+    display: block;
+    text-align: left;
+    margin-left: 10%;
+}
+#form-parametros input[type="text"],
+#form-parametros input[type="number"] {
+    width: 80%;
+    padding: 9px;
+    margin-bottom: 16px;
+    border: 1px solid #b0b0b0;
+    border-radius: 6px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    background: #f7fafc;
+    transition: border 0.2s;
+}
+#form-parametros input[type="text"]:focus,
+#form-parametros input[type="number"]:focus {
+    border: 1.5px solid #096B68;
+    outline: none;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .header {
+        min-height: 60px;
+        font-size: 1rem;
+    }
+    #apartado-inicio,
+    #apartado-pruebas,
+    #apartado-parametros {
+        max-width: 98vw;
+        padding: 18px 4vw 18px 4vw;
+        margin-top: 90px;
+    }
+    .Menu {
+        width: 32px;
+        height: 32px;
+        gap: 5px;
+    }
+    .header img {
+        height: 2.5rem;
+        width: 2.5rem;
+    }
+}
