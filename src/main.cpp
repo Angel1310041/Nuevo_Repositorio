@@ -107,34 +107,34 @@ void manejarEntradas() {
       //digitalWrite(LED_PIN, HIGH);
       entrarmodoprog();
       Heltec.display->clear();
-      Heltec.display->drawXbm(0, 0, 128, 64, img4); 
+      Heltec.display->drawXbm(0, 0, 128, 64, img4);
       Heltec.display->display();
-      imprimir("Entrando en modo programacion...", "cyan");
+      if (!modoprog) imprimir("Entrando en modo programacion...", "cyan"); // Condición para el Serial
     }
   } else {
     progStart = 0; esperandoLiberar = false;
   }
 
-  if (millis() - t > 10000) { imprimir("Lectura MQ-6: " + String(mq6)); t = millis(); }
-  if (modoprog) return;
+  if (!modoprog) { // Solo ejecutar si NO estamos en modo programación
+    if (millis() - t > 10000) { imprimir("Lectura MQ-6: " + String(mq6)); t = millis(); }
 
-  if (mq6 == LOW && !variableDetectada) {
-    enviarRF_Matriz(0, 0, 0, 0, 0);
-    mostrarImagenPorTipoSensor(0); // img3 para tipo 0 (gas)
-    blinkLed();
-    variableDetectada = true;
-    imprimir("¡Gas detectado! Alerta RF enviada.", "rojo");
-  } else if (mq6 == HIGH) variableDetectada = false;
+    if (mq6 == LOW && !variableDetectada) {
+      enviarRF_Matriz(0, 0, 0, 0, 0);
+      mostrarImagenPorTipoSensor(0); // img3 para tipo 0 (gas)
+      blinkLed();
+      variableDetectada = true;
+      imprimir("¡Gas detectado! Alerta RF enviada.", "rojo");
+    } else if (mq6 == HIGH) variableDetectada = false;
 
-  if (char k = keypad.getKey()) {
-    for (int r = 0; r < ROWS; r++)
-      for (int c = 0; c < COLS; c++)
-        if (keys[r][c] == k) {
-          int tipoSensor = matrizTipoSensor[r][c];
-          enviarRF_Matriz(r, c, 0, tipoSensor, 0);
-          
-          blinkLed();
-        }
+    if (char k = keypad.getKey()) {
+      for (int r = 0; r < ROWS; r++)
+        for (int c = 0; c < COLS; c++)
+          if (keys[r][c] == k) {
+            int tipoSensor = matrizTipoSensor[r][c];
+            enviarRF_Matriz(r, c, 0, tipoSensor, 0);
+            blinkLed();
+          }
+    }
   }
 }
 
