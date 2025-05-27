@@ -116,7 +116,8 @@ void manejarEntradas() {
     }
 
     if (mq6 == LOW && !variableDetectada) {
-      enviarRF_Matriz(0, 0, 0, 0, 0);
+      //enviarRF_Matriz(0, 0, 0, 0, 0);
+      Transmisorrf.send(33330001, 32);
       mostrarImagenPorTipoSensor(0);
       blinkLed();
       variableDetectada = true;
@@ -126,7 +127,7 @@ void manejarEntradas() {
     }
 
     if (estadoBoton == LOW && botonAnterior == HIGH) {
-      Transmisorrf.send(33339030, 32);
+      Transmisorrf.send(33339001, 32);
       blinkLed();
       mostrarImagen(img2);
       imprimir("Código de prueba RF enviado: 33339030", "verde");
@@ -134,7 +135,7 @@ void manejarEntradas() {
     botonAnterior = estadoBoton;
   }
 
-  // Regresar a imagen de inicio después de 10 segundos, solo si NO estamos en modo programación
+
   if (!modoprog && imagenMostrada == 2 && millis() - tiempoUltimaImagen >= 10000) {
     mostrarInicio();
   }
@@ -156,10 +157,9 @@ void procesarEnvioLora() {
 void setup() {
   Serial.begin(115200);
   EEPROM.begin(EEPROM_SIZE);
-  pinMode(MQ6_PIN, INPUT);
-  pinMode(LED_PIN, OUTPUT);
+  pinMode(MQ6_PIN, INPUT_PULLUP);
+  pinMode(LED_PIN, INPUT);
   digitalWrite(LED_PIN, LOW); 
-  pinMode(prog, INPUT_PULLUP);
   pinMode(prog, INPUT_PULLUP);
   pinMode(BOTON_PRUEBA_PIN, INPUT_PULLUP);
 

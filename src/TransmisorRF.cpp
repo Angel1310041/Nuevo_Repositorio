@@ -7,7 +7,7 @@
 
 RCSwitch Transmisorrf = RCSwitch();
 
-const char* codigosRF_Matriz[3][3] = {
+/*const char* codigosRF_Matriz[3][3] = {
     {"56700001", "33332002", "33333012"}, // 0, 2, 3
     {"33331013", "33334014", "33335015"}, // 1, 4, 5
     {"33336016", "33337017", "33339030"}  // 6, 7, 0
@@ -25,4 +25,4 @@ void enviarRF_Matriz(uint8_t fila, uint8_t columna, int zona, int tipoSensor, in
         int tipoSensorReal = codigo[4] - '0';
         mostrarImagenPorTipoSensor(tipoSensorReal);
     }
-}
+}*/
