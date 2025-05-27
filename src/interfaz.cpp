@@ -113,6 +113,43 @@ void endpointsMProg(void *pvParameters) {
         programarReinicio(); // usa Ticker en vez de ESP.restart directo
     });
 
+    server.on("/guardar-parametros", HTTP_POST,
+[](AsyncWebServerRequest *request) {},
+NULL,
+[](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+    DynamicJsonDocument doc(256);
+    DeserializationError error = deserializeJson(doc, data, len);
+
+    if (error) {
+        request->send(400, "application/json", "{\"error\": \"JSON inválido\"}");
+        return;
+    }
+
+    String parametro1 = doc["parametro1"] | "";
+    String parametro2 = doc["parametro2"] | "";
+
+    if (parametro1 == "" || parametro2 == "") {
+        request->send(400, "application/json", "{\"error\": \"Parámetros incompletos\"}");
+        return;
+    }
+
+    // Guardar en EEPROM (ejemplo simple, cada carácter ocupa 1 byte)
+    for (int i = 0; i < parametro1.length() && i < 32; i++) {
+        EEPROM.write(i, parametro1[i]);
+    }
+    EEPROM.write(parametro1.length(), '\0');  // Fin de cadena
+
+    for (int i = 0; i < parametro2.length() && i < 32; i++) {
+        EEPROM.write(64 + i, parametro2[i]);
+    }
+    EEPROM.write(64 + parametro2.length(), '\0');
+
+    EEPROM.commit();
+
+    request->send(200, "application/json", "{\"status\": \"Parámetros guardados\"}");
+});
+
+
     server.on("/enviar-lora", HTTP_POST,
     [](AsyncWebServerRequest *request) {
         request->send(400, "application/json", "{\"error\": \"Falta el cuerpo del mensaje\"}");

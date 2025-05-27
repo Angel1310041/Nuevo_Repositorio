@@ -10,3 +10,5 @@ tambien que envie la señal RF de prueba desde la interfaz
 La parte del codigo esta funcionando a la perfeccion, solo falta agregar las imagenes del pichon y la parte de la interfaz
 
 Se cargara mi interfaz y hare pruebas, de entrada solamente la lora esta mostrando la pantalla de inicio con los botones de pantalla, hay que corregir eso.
+
+

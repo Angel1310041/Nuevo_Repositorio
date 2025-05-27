@@ -158,7 +158,7 @@ void setup() {
   Serial.begin(115200);
   EEPROM.begin(EEPROM_SIZE);
   pinMode(MQ6_PIN, INPUT_PULLUP);
-  pinMode(LED_PIN, INPUT);
+   pinMode(LED_PIN, INPUT);
   digitalWrite(LED_PIN, LOW); 
   pinMode(prog, INPUT_PULLUP);
   pinMode(BOTON_PRUEBA_PIN, INPUT_PULLUP);

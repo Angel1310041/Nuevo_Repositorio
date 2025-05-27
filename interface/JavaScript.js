@@ -49,6 +49,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    document.getElementById("guardarBtn").addEventListener("click", () => {
+    const parametro1 = document.getElementById("param1").value;
+    const parametro2 = document.getElementById("param2").value;
+
+    fetch("/guardar-parametros", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ parametro1, parametro2 })
+    })
+    .then(res => res.json())
+    .then(data => alert(data.status || data.error));
+});
+
     // Botón para enviar la señal RF por LoRa
     const btnEnviarRF = document.getElementById('btn-enviar-rf');
     if (btnEnviarRF) {
