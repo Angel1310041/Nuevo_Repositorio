@@ -1,41 +1,3 @@
-/*#include "main.h"
-#include "interfaz.h"
-#include "TransmisorRf.h"
-#include "Pantalla.h"
-
-IPAddress local_IP(192, 168, 8, 28);
-IPAddress gateway(192, 168, 14, 1);
-IPAddress subnet(255, 255, 255, 0);
-
-AsyncWebServer server(80);
-
-void entrarModoProgramacion() {
-  imprimir("Entrando a modo programación...");
-  modoprog = true;
-  esp_task_wdt_reset();
-  digitalWrite(LED_PIN, HIGH);
-  vTaskDelay(1000 / portTICK_PERIOD_MS);
-  imprimir("Activando Modo Programación...");
-  xTaskCreatePinnedToCore(
-    endpointsMProg,
-    "endpoints",
-    8192,
-    NULL,
-    2,
-    NULL,
-    0
-  );
-  imprimir("---# Modo Programación Activado #---", "verde");
-}
-void endpointsMProg(void *pvParameters) {
-  server.on("/programacion", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(200, "text/plain", "Modo Programación Activado");
-  });
-  server.begin();
-  while (true) {
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-  }
-}*/
 #include "main.h"
 #include "interfaz.h"
 #include "TransmisorRf.h"
@@ -44,24 +6,30 @@ void endpointsMProg(void *pvParameters) {
 #include <WiFi.h>
 #include <ArduinoJson.h>
 #include <esp_system.h>
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+#include <Ticker.h>
 
 IPAddress local_IP(192, 168, 8, 28);
-IPAddress gateway(192, 168, 14, 1);
+IPAddress gateway(192, 168, 8, 1);
 IPAddress subnet(255, 255, 255, 0);
 
 const char* ssidAP = "MiInterfazAP";
 const char* passwordAP = "12345678";
 
 AsyncWebServer server(80);
-
+Ticker restartTimer;
 extern String Version;
+
+String mensajePendiente = "";
+bool enviarLoraPendiente = false;
 
 void animacionCarga() {
     const char* estados[] = {"-", "\\", "|", "/"};
     for (int i = 0; i < 10; i++) {
         Serial.print("\rCargando... ");
         Serial.print(estados[i % 4]);
-        delay(200);
+        vTaskDelay(200 / portTICK_PERIOD_MS);
     }
     Serial.println("\rCargando... ¡Listo!");
 }
@@ -91,7 +59,6 @@ void procesarArchivoJSON(const char* path, AsyncWebServerRequest* request) {
         return;
     }
 
-    // Si todo está bien, responde con éxito y la versión
     imprimir("JSON recibido y procesado correctamente");
     doc["mensaje"] = "Archivo recibido y procesado";
     String respuesta;
@@ -99,73 +66,91 @@ void procesarArchivoJSON(const char* path, AsyncWebServerRequest* request) {
     request->send(200, "application/json", respuesta);
 }
 
+// Función segura para reiniciar
+void programarReinicio() {
+    restartTimer.once(1.0, []() {
+        ESP.restart();
+    });
+}
 
 void endpointsMProg(void *pvParameters) {
     animacionCarga();
-    WiFi.mode(WIFI_AP);
 
+    WiFi.mode(WIFI_AP);
     if (!WiFi.softAPConfig(local_IP, gateway, subnet)) {
         imprimir("Error al configurar la IP estática");
         vTaskDelete(NULL);
         return;
     }
-    WiFi.softAP(ssidAP, passwordAP, 6, 0, 4);
+
+    if (!WiFi.softAP(ssidAP, passwordAP, 6, 0, 4)) {
+        imprimir("Error al iniciar el AP");
+        vTaskDelete(NULL);
+        return;
+    }
+
     IPAddress IP = WiFi.softAPIP();
     imprimir("Punto de acceso creado: " + IP.toString());
 
+    // Endpoints
     server.on("/programacion", HTTP_GET, [](AsyncWebServerRequest *request) {
         request->send(200, "text/plain", "Modo Programación Activado");
     });
 
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
         if (!SPIFFS.exists("/interfaz.html.gz")) {
-            imprimir("Archivo /interfaz.html.gz no encontrado en SPIFFS");
-            request->send(404, "text/plain", "Archivo de interfaz no encontrado");
+            imprimir("Archivo /interfaz.html.gz no encontrado");
+            request->send(404, "text/plain", "Archivo no encontrado");
             return;
         }
         AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/interfaz.html.gz", "text/html");
-        response->addHeader("Content-encoding", "gzip");
+        response->addHeader("Content-Encoding", "gzip");
         request->send(response);
     });
 
     server.on("/reiniciar", HTTP_POST, [](AsyncWebServerRequest *request) {
-    request->send(200, "text/plain", "Reiniciando...");
-    delay(100); // Permite que la respuesta se envíe antes de reiniciar
-    ESP.restart();
-});
+        request->send(200, "text/plain", "Reiniciando...");
+        programarReinicio(); // usa Ticker en vez de ESP.restart directo
+    });
 
-    // <-- AQUÍ va tu endpoint LoRa
-    server.on("/enviar-lora", HTTP_POST, [](AsyncWebServerRequest *request){
+    server.on("/enviar-lora", HTTP_POST,
+    [](AsyncWebServerRequest *request) {
         request->send(400, "application/json", "{\"error\": \"Falta el cuerpo del mensaje\"}");
-    }, NULL, [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+    },
+    NULL,
+    [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
         DynamicJsonDocument doc(256);
         DeserializationError error = deserializeJson(doc, data, len);
         if (error) {
             request->send(400, "application/json", "{\"error\": \"JSON no válido\"}");
             return;
         }
+
         String mensaje = doc["mensaje"] | "";
         if (mensaje == "") {
             request->send(400, "application/json", "{\"error\": \"Falta el campo 'mensaje'\"}");
             return;
         }
-        enviarPorLora(mensaje);
-        request->send(200, "application/json", "{\"status\": \"Mensaje enviado por LoRa\"}");
+
+        mensajePendiente = mensaje;
+        enviarLoraPendiente = true;
+        request->send(200, "application/json", "{\"status\": \"Mensaje recibido y será enviado\"}");
     });
 
+
     server.begin();
-    while (true) {
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
+
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+    vTaskDelete(NULL);
 }
 
 void entrarModoProgramacion() {
     imprimir("Entrando a modo programación...");
     modoprog = true;
-    esp_task_wdt_reset();
     digitalWrite(LED_PIN, HIGH);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     imprimir("Activando Modo Programación...");
+
     xTaskCreatePinnedToCore(
         endpointsMProg,
         "endpoints",
@@ -173,8 +158,9 @@ void entrarModoProgramacion() {
         NULL,
         2,
         NULL,
-        0
+        1 
     );
+
     imprimir("---# Modo Programación Activado #---", "verde");
 }
 
@@ -185,3 +171,4 @@ void entrarmodoprog() {
     }
     entrarModoProgramacion();
 }
+

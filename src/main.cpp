@@ -5,7 +5,7 @@
 #include <RCSwitch.h>
 #include <heltec.h>
 
-String Version = "3.1.1.1";
+String Version = "3.2.1.1";
 const int EEPROM_SIZE = 512;
 
 boolean debug = true, variableDetectada = false, modoprog = false; 
@@ -140,11 +140,25 @@ void manejarEntradas() {
   }
 }
 
+extern String mensajePendiente;
+extern bool enviarLoraPendiente;
+
+void procesarEnvioLora() {
+  if (enviarLoraPendiente && mensajePendiente.length() > 0) {
+    enviarPorLora(mensajePendiente);
+    mensajePendiente = "";
+    enviarLoraPendiente = false;
+  }
+}
+
+
+
 void setup() {
   Serial.begin(115200);
   EEPROM.begin(EEPROM_SIZE);
   pinMode(MQ6_PIN, INPUT);
   pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW); 
   pinMode(prog, INPUT_PULLUP);
   pinMode(prog, INPUT_PULLUP);
   pinMode(BOTON_PRUEBA_PIN, INPUT_PULLUP);
@@ -169,4 +183,5 @@ void setup() {
 
 void loop() {
   manejarEntradas();
+  procesarEnvioLora();
 }

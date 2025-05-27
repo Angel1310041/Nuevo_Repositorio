@@ -6,6 +6,7 @@
     void entrarmodoprog();
     void endpointsMProg(void *pvParameters);
     void enviarPorLora(String mensaje);
+    void procesarEnvioLora();
 #endif // INTERFAZ_H
 
 //pio run --target uploadfs    comando que debe ser abierto en una terminal de pio para poder cargar la app
