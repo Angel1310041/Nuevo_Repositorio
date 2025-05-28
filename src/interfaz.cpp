@@ -162,7 +162,32 @@ NULL,
     }
 });
 
+    server.on("/mostrar-pantalla", HTTP_POST,
+[](AsyncWebServerRequest *request) {},
+NULL,
+[](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+    DynamicJsonDocument doc(256);
+    DeserializationError error = deserializeJson(doc, data, len);
 
+    if (error) {
+        Serial.println("Error al parsear JSON para /mostrar-pantalla: " + String(error.c_str()));
+        request->send(400, "application/json", "{\"error\": \"JSON inválido\"}");
+        return;
+    }
+
+    if (!doc.containsKey("numero")) {
+        Serial.println("JSON para /mostrar-pantalla no contiene 'numero'.");
+        request->send(400, "application/json", "{\"error\": \"Falta el parámetro 'numero'\"}");
+        return;
+    }
+
+    int numeroPantalla = doc["numero"].as<int>();
+
+    Serial.printf("Recibida solicitud para mostrar pantalla numero: %d\n", numeroPantalla);
+    mostrarPantallaPorNumero(numeroPantalla);
+
+    request->send(200, "application/json", "{\"status\": \"Solicitud de pantalla recibida\"}");
+});
 
     server.on("/enviar-lora", HTTP_POST,
     [](AsyncWebServerRequest *request) {
@@ -186,7 +211,22 @@ NULL,
         mensajePendiente = mensaje;
         enviarLoraPendiente = true;
         request->send(200, "application/json", "{\"status\": \"Mensaje recibido y será enviado\"}");
-    });
+    }); 
+
+    server.on("/get-parametros", HTTP_GET, [](AsyncWebServerRequest *request) {
+    DynamicJsonDocument doc(256);
+
+    doc["id"] = activo.id;
+    doc["zona"] = activo.zona;
+    doc["tipo"] = activo.tipo;
+
+    String responseJson;
+    serializeJson(doc, responseJson);
+
+    Serial.println("Enviando parámetros actuales via /get-parametros: " + responseJson);
+
+    request->send(200, "application/json", responseJson);
+});
 
     server.on("/enviar-rf-prueba", HTTP_POST, [](AsyncWebServerRequest *request) {
     Transmisorrf.send(33339001, 32);

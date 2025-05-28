@@ -44,4 +44,5 @@
     void endpointsMProg(void *pvParameters);
     void enviarPorLora(String mensaje);
     void procesarEnvioLora();
+    void mostrarPantallaPorNumero(int numero);
 #endif 

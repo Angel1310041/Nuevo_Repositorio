@@ -18,7 +18,7 @@ int imagenMostrada = 1;
 extern String mensajePendiente;
 extern bool enviarLoraPendiente;
 
-extern const unsigned char img1[], img2[], img3[], img4[], img5[], img6[];
+extern const unsigned char img1[], img2[], img3[], img4[], img5[], img6[], img7[];
 
 void imprimir(String m, String c) {
   if (!debug) return;
@@ -79,6 +79,47 @@ void mostrarImagenPorTipoSensor(int tipoSensor) {
     default:
       break;
   }
+}
+
+void mostrarPantallaPorNumero(int numero) {
+    Serial.printf("Mostrando contenido para pantalla numero: %d\n", numero);
+
+    if (!Heltec.display) {
+        Serial.println("Error: Display no inicializado.");
+        return;
+    }
+
+    Heltec.display->clear(); 
+
+    switch (numero) {
+        case 1:
+            Heltec.display->drawXbm(0, 0, 128, 64, img10);
+            break;
+        case 2:
+            Heltec.display->drawXbm(0, 0, 128, 64, img9);
+            break;
+        case 3:
+            Heltec.display->drawXbm(0, 0, 128, 64, img3);
+            break;
+        case 4:
+            Heltec.display->drawXbm(0, 0, 128, 64, img8);
+            break;
+        case 5:
+            Heltec.display->drawXbm(0, 0, 128, 64, img5);
+            break;
+        case 6:
+            Heltec.display->drawXbm(0, 0, 128, 64, img6);
+            break;
+        case 7:
+            Heltec.display->drawXbm(0, 0, 128, 64, img7);
+            break;
+        default:
+            Heltec.display->drawString(0, 0, "Pantalla Invalida");
+            Serial.printf("Numero de pantalla invalido recibido: %d\n", numero);
+            break;
+    }
+
+    Heltec.display->display(); 
 }
 
 void blinkLed() {
@@ -144,8 +185,6 @@ void manejarEntradas() {
   }
 }
 
-
-
 void procesarEnvioLora() {
   if (enviarLoraPendiente && mensajePendiente.length() > 0) {
     enviarPorLora(mensajePendiente);
@@ -154,11 +193,9 @@ void procesarEnvioLora() {
   }
 }
 
-
-
 void setup() {
   Serial.begin(115200);
-  EEPROM.begin(EEPROM_SIZE); // Inicialización de la EEPROM
+  EEPROM.begin(EEPROM_SIZE);
   pinMode(MQ6_PIN, INPUT_PULLUP);
   pinMode(LED_PIN, INPUT);
   digitalWrite(LED_PIN, LOW);
@@ -170,17 +207,15 @@ void setup() {
 
   Transmisorrf.enableTransmit(33);
 
-  EEPROM.get(0, activo); // Lee la estructura SENSOR desde la dirección 0
+  EEPROM.get(0, activo); 
 
-  // *** Lógica de validación ajustada para coincidir con los rangos del formulario ***
-  // Validar ID (1000-9999), Zona (1-512), Tipo (0-7, 9)
   if (activo.id < 1000 || activo.id > 9999 ||
       activo.zona < 1 || activo.zona > 512 ||
-      activo.tipo < 0 || (activo.tipo > 7 && activo.tipo != 9)) // Tipo debe ser 0-7 o 9
+      activo.tipo < 0 || (activo.tipo > 7 && activo.tipo != 9)) 
   {
     imprimir("Datos EEPROM inválidos o fuera de rango, restaurando...", "amarillo");
-    activo = {0, 0, 0}; // Restaura a valores por defecto
-    EEPROM.put(0, activo); // Guarda los valores por defecto
+    activo = {0, 0, 0}; 
+    EEPROM.put(0, activo); 
     EEPROM.commit();
   }
 
