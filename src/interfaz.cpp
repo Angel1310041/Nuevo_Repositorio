@@ -117,37 +117,58 @@ void endpointsMProg(void *pvParameters) {
 [](AsyncWebServerRequest *request) {},
 NULL,
 [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-    DynamicJsonDocument doc(256);
+    // Aumentamos el tamaño del documento JSON si es necesario, 256 puede ser justo
+    DynamicJsonDocument doc(512);
     DeserializationError error = deserializeJson(doc, data, len);
 
     if (error) {
-        request->send(400, "application/json", "{\"error\": \"JSON inválido\"}");
+        request->send(400, "application/json", "{\"error\": \"JSON inválido: " + String(error.c_str()) + "\"}");
         return;
     }
 
-    String parametro1 = doc["parametro1"] | "";
-    String parametro2 = doc["parametro2"] | "";
+    // Extraer los valores del JSON. Usamos get<int>() para asegurar que sean enteros.
+    // Proporcionamos un valor por defecto (-1) para detectar si faltan.
+    int nuevoId = doc["id-alarma"].as<int>();
+    int nuevaZona = doc["zona"].as<int>();
+    int nuevoTipo = doc["tipo-sensor"].as<int>();
 
-    if (parametro1 == "" || parametro2 == "") {
-        request->send(400, "application/json", "{\"error\": \"Parámetros incompletos\"}");
-        return;
+    // Validar que los parámetros requeridos estén presentes y sean válidos (opcional pero recomendado)
+    // Puedes añadir validaciones más específicas aquí si es necesario
+    if (doc["id-alarma"].isNull() || doc["zona"].isNull() || doc["tipo-sensor"].isNull()) {
+         request->send(400, "application/json", "{\"error\": \"Parámetros incompletos o inválidos\"}");
+         return;
     }
 
-    // Guardar en EEPROM (ejemplo simple, cada carácter ocupa 1 byte)
-    for (int i = 0; i < parametro1.length() && i < 32; i++) {
-        EEPROM.write(i, parametro1[i]);
+    // Validar rangos (opcional, basado en tu formulario)
+    if (nuevoId < 1000 || nuevoId > 9999 || nuevaZona < 1 || nuevaZona > 512 || nuevoTipo < 0 || nuevoTipo > 9) {
+         request->send(400, "application/json", "{\"error\": \"Valores de parámetros fuera de rango\"}");
+         return;
     }
-    EEPROM.write(parametro1.length(), '\0');  // Fin de cadena
 
-    for (int i = 0; i < parametro2.length() && i < 32; i++) {
-        EEPROM.write(64 + i, parametro2[i]);
+
+    // Actualizar la variable global 'activo' con los nuevos valores
+    // Asegúrate de que 'activo' es una variable global de tipo SENSOR
+    activo.id = nuevoId;
+    activo.zona = nuevaZona;
+    activo.tipo = nuevoTipo;
+
+    // Guardar la estructura 'activo' actualizada en la EEPROM en la dirección 0
+    // Asegúrate de que EEPROM.begin(EEPROM_SIZE) con un tamaño suficiente
+    // para la estructura SENSOR ya se llamó en setup().
+    EEPROM.put(0, activo);
+
+    // Confirmar la escritura en la EEPROM
+    bool success = EEPROM.commit();
+
+    if (success) {
+        Serial.println("Parámetros guardados en EEPROM correctamente.");
+        request->send(200, "application/json", "{\"status\": \"Parámetros guardados\"}");
+    } else {
+        Serial.println("Error al guardar parámetros en EEPROM.");
+        request->send(500, "application/json", "{\"error\": \"Error al guardar en EEPROM\"}");
     }
-    EEPROM.write(64 + parametro2.length(), '\0');
-
-    EEPROM.commit();
-
-    request->send(200, "application/json", "{\"status\": \"Parámetros guardados\"}");
 });
+
 
 
     server.on("/enviar-lora", HTTP_POST,

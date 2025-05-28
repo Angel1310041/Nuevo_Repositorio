@@ -13,7 +13,10 @@ SENSOR activo{-1, -1, -1};
 
 const int BOTON_PRUEBA_PIN = 2;
 unsigned long tiempoUltimaImagen = 0;
-int imagenMostrada = 1; // 1: inicio, 2: alerta
+int imagenMostrada = 1; 
+
+extern String mensajePendiente;
+extern bool enviarLoraPendiente;
 
 extern const unsigned char img1[], img2[], img3[], img4[], img5[], img6[];
 
@@ -116,21 +119,35 @@ void manejarEntradas() {
     }
 
     if (mq6 == LOW && !variableDetectada) {
-      //enviarRF_Matriz(0, 0, 0, 0, 0);
-      Transmisorrf.send(33330001, 32);
-      mostrarImagenPorTipoSensor(0);
+      // *** Restaurado: Enviar por Transmisor RF (RCSwitch) ***
+      //enviarRF_Matriz(0, 0, 0, 0, 0); // Si usabas esta, descoméntala
+      Transmisorrf.send(33330001, 32); // Envía el código RF para gas
+
+      // --- Código para LoRa (comentado o eliminado si solo quieres RF) ---
+      // mensajePendiente = "ALARM:" + String(activo.id) + ":" + String(activo.zona) + ":" + String(activo.tipo) + ":GAS";
+      // enviarLoraPendiente = true;
+      // -----------------------------------------------------------------
+
+      mostrarImagenPorTipoSensor(0); // Asumiendo que 0 es el tipo para gas
       blinkLed();
       variableDetectada = true;
-      imprimir("¡Gas detectado! Alerta RF enviada.", "rojo");
+      imprimir("¡Gas detectado! Alerta RF enviada.", "rojo"); // Mensaje ajustado
     } else if (mq6 == HIGH) {
       variableDetectada = false;
     }
 
     if (estadoBoton == LOW && botonAnterior == HIGH) {
-      Transmisorrf.send(33339001, 32);
+      // *** Restaurado: Enviar por Transmisor RF (RCSwitch) ***
+      Transmisorrf.send(33339001, 32); // Envía el código RF para botón de prueba
+
+      // --- Código para LoRa (comentado o eliminado si solo quieres RF) ---
+      // mensajePendiente = "ALARM:" + String(activo.id) + ":" + String(activo.zona) + ":" + String(activo.tipo) + ":BUTTON";
+      // enviarLoraPendiente = true;
+      // -----------------------------------------------------------------
+
       blinkLed();
-      mostrarImagen(img2);
-      imprimir("Código de prueba RF enviado: 33339030", "verde");
+      mostrarImagen(img2); // Asumiendo que img2 es para el botón de prueba
+      imprimir("Código de prueba RF enviado: 33339001", "verde"); // Mensaje ajustado
     }
     botonAnterior = estadoBoton;
   }
@@ -141,8 +158,7 @@ void manejarEntradas() {
   }
 }
 
-extern String mensajePendiente;
-extern bool enviarLoraPendiente;
+
 
 void procesarEnvioLora() {
   if (enviarLoraPendiente && mensajePendiente.length() > 0) {
@@ -156,10 +172,10 @@ void procesarEnvioLora() {
 
 void setup() {
   Serial.begin(115200);
-  EEPROM.begin(EEPROM_SIZE);
+  EEPROM.begin(EEPROM_SIZE); // Inicialización de la EEPROM
   pinMode(MQ6_PIN, INPUT_PULLUP);
    pinMode(LED_PIN, INPUT);
-  digitalWrite(LED_PIN, LOW); 
+  digitalWrite(LED_PIN, LOW);
   pinMode(prog, INPUT_PULLUP);
   pinMode(BOTON_PRUEBA_PIN, INPUT_PULLUP);
 
@@ -168,13 +184,20 @@ void setup() {
 
   Transmisorrf.enableTransmit(33);
 
-  EEPROM.get(0, activo);
-  if (activo.id < 0 || activo.zona < 0 || activo.zona > 10 || activo.tipo < 0 || activo.tipo > 8) {
-    imprimir("Datos EEPROM inválidos, restaurando...", "amarillo");
-    activo = {0, 0, 0};
-    EEPROM.put(0, activo);
+  EEPROM.get(0, activo); // Lee la estructura SENSOR desde la dirección 0
+
+  // *** Lógica de validación ajustada para coincidir con los rangos del formulario ***
+  // Validar ID (1000-9999), Zona (1-512), Tipo (0-7, 9)
+  if (activo.id < 1000 || activo.id > 9999 ||
+      activo.zona < 1 || activo.zona > 512 ||
+      activo.tipo < 0 || (activo.tipo > 7 && activo.tipo != 9)) // Tipo debe ser 0-7 o 9
+  {
+    imprimir("Datos EEPROM inválidos o fuera de rango, restaurando...", "amarillo");
+    activo = {0, 0, 0}; // Restaura a valores por defecto
+    EEPROM.put(0, activo); // Guarda los valores por defecto
     EEPROM.commit();
   }
+
 
   imprimir("ID: " + String(activo.id));
   imprimir("Zona: " + String(activo.zona));

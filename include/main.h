@@ -27,6 +27,7 @@ extern boolean variableDetectada;
 extern byte rowPins[ROWS];
 extern byte colPins[COLS];
 extern bool modoprog;
+extern SENSOR activo;
 void imprimir(String m, String c="");
 
 void setup();
