@@ -5,7 +5,7 @@
 #include <RCSwitch.h>
 #include <heltec.h>
 
-String Version = "3.2.1.1";
+String Version = "3.2.1.2";
 const int EEPROM_SIZE = 512;
 
 boolean debug = true, variableDetectada = false, modoprog = false; 
@@ -68,7 +68,7 @@ void mostrarImagenPorTipoSensor(int tipoSensor) {
       break;
     case 5:
     case 6:
-     mostrarImagen(img6);
+      mostrarImagen(img6);
       break;
     case 7:
       mostrarImagen(img7);
@@ -119,35 +119,21 @@ void manejarEntradas() {
     }
 
     if (mq6 == LOW && !variableDetectada) {
-      // *** Restaurado: Enviar por Transmisor RF (RCSwitch) ***
-      //enviarRF_Matriz(0, 0, 0, 0, 0); // Si usabas esta, descoméntala
-      Transmisorrf.send(33330001, 32); // Envía el código RF para gas
-
-      // --- Código para LoRa (comentado o eliminado si solo quieres RF) ---
-      // mensajePendiente = "ALARM:" + String(activo.id) + ":" + String(activo.zona) + ":" + String(activo.tipo) + ":GAS";
-      // enviarLoraPendiente = true;
-      // -----------------------------------------------------------------
-
-      mostrarImagenPorTipoSensor(0); // Asumiendo que 0 es el tipo para gas
+      //enviarRF_Matriz(0, 0, 0, 0, 0);
+      Transmisorrf.send(33330001, 32);
+      mostrarImagenPorTipoSensor(0);
       blinkLed();
       variableDetectada = true;
-      imprimir("¡Gas detectado! Alerta RF enviada.", "rojo"); // Mensaje ajustado
+      imprimir("¡Gas detectado! Alerta RF enviada.", "rojo");
     } else if (mq6 == HIGH) {
       variableDetectada = false;
     }
 
     if (estadoBoton == LOW && botonAnterior == HIGH) {
-      // *** Restaurado: Enviar por Transmisor RF (RCSwitch) ***
-      Transmisorrf.send(33339001, 32); // Envía el código RF para botón de prueba
-
-      // --- Código para LoRa (comentado o eliminado si solo quieres RF) ---
-      // mensajePendiente = "ALARM:" + String(activo.id) + ":" + String(activo.zona) + ":" + String(activo.tipo) + ":BUTTON";
-      // enviarLoraPendiente = true;
-      // -----------------------------------------------------------------
-
+      Transmisorrf.send(33339001, 32);
       blinkLed();
-      mostrarImagen(img2); // Asumiendo que img2 es para el botón de prueba
-      imprimir("Código de prueba RF enviado: 33339001", "verde"); // Mensaje ajustado
+      mostrarImagen(img2);
+      imprimir("Código de prueba RF enviado: 33339030", "verde");
     }
     botonAnterior = estadoBoton;
   }
@@ -174,7 +160,7 @@ void setup() {
   Serial.begin(115200);
   EEPROM.begin(EEPROM_SIZE); // Inicialización de la EEPROM
   pinMode(MQ6_PIN, INPUT_PULLUP);
-   pinMode(LED_PIN, INPUT);
+  pinMode(LED_PIN, INPUT);
   digitalWrite(LED_PIN, LOW);
   pinMode(prog, INPUT_PULLUP);
   pinMode(BOTON_PRUEBA_PIN, INPUT_PULLUP);
