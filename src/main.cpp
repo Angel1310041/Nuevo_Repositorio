@@ -5,7 +5,7 @@
 #include <RCSwitch.h>
 #include <heltec.h>
 
-String Version = "3.2.1.2";
+String Version = "3.1.2.1";
 const int EEPROM_SIZE = 512;
 
 boolean debug = true, variableDetectada = false, modoprog = false; 
@@ -119,7 +119,7 @@ void manejarEntradas() {
     }
 
     if (mq6 == LOW && !variableDetectada) {
-      //enviarRF_Matriz(0, 0, 0, 0, 0);
+
       Transmisorrf.send(33330001, 32);
       mostrarImagenPorTipoSensor(0);
       blinkLed();

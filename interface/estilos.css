@@ -19,6 +19,7 @@ body {
     gap: 7px;
     z-index: 1100;
 }
+
 .Menu div {
     background-color: #096B68;
     height: 4px;
@@ -42,6 +43,7 @@ body {
     z-index: 2;
     box-shadow: 0 2px 12px rgba(9,107,104,0.08);
 }
+
 .header img {
     height: 4rem;
     width: 4rem;
@@ -62,15 +64,18 @@ body {
     padding-top: 80px;
     display: block;
 }
+
 .menuu.activo {
     left: 0;
 }
+
 .menuu .submenu {
     display: flex;
     flex-direction: column;
     gap: 18px;
     padding: 0 18px;
 }
+
 .menuu .submenu a {
     color: #fff;
     text-decoration: none;
@@ -81,6 +86,7 @@ body {
     cursor: pointer;
     border-radius: 4px;
 }
+
 .menuu .submenu a:hover {
     background: #3a4ba0;
     color: #ffd700;
@@ -95,10 +101,12 @@ body {
     align-items: center;
     justify-content: center;
 }
+
 .loader {
     display: flex;
     gap: 10px;
 }
+
 .loader div {
     width: 20px;
     height: 20px;
@@ -106,6 +114,7 @@ body {
     border-radius: 50%;
     animation: bounce 0.8s infinite alternate;
 }
+
 .loader div:nth-child(2) { animation-delay: 0.2s; }
 .loader div:nth-child(3) { animation-delay: 0.4s; }
 @keyframes bounce {
@@ -115,7 +124,6 @@ body {
     }
 }
 
-/* Tarjetas principales */
 #apartado-inicio,
 #apartado-pruebas,
 #apartado-parametros {
@@ -142,7 +150,7 @@ body {
     color: #096B68;
 }
 
-/* Botones generales */
+
 #apartado-pruebas button,
 #apartado-parametros button,
 #apartado-inicio button,
@@ -162,6 +170,7 @@ body {
     display: block;
     transition: background 0.2s, transform 0.2s;
 }
+
 #apartado-pruebas button:hover,
 #apartado-parametros button:hover,
 #apartado-inicio button:hover,
@@ -171,23 +180,25 @@ body {
     transform: translateY(-2px) scale(1.03);
 }
 
-/* Lista de botones de pruebas */
+
 #lista-pantallas {
     list-style: none;
     padding: 0;
     margin: 0 auto;
     max-width: 220px;
 }
+
 #lista-pantallas li {
     margin-bottom: 14px;
     display: flex;
     justify-content: center;
 }
+
 #lista-pantallas li:last-child {
     margin-bottom: 0;
 }
 
-/* Inputs y formularios */
+
 #form-parametros label {
     color: #333;
     font-size: 1rem;
@@ -196,6 +207,7 @@ body {
     text-align: left;
     margin-left: 10%;
 }
+
 #form-parametros input[type="text"],
 #form-parametros input[type="number"] {
     width: 80%;
@@ -208,13 +220,13 @@ body {
     background: #f7fafc;
     transition: border 0.2s;
 }
+
 #form-parametros input[type="text"]:focus,
 #form-parametros input[type="number"]:focus {
     border: 1.5px solid #096B68;
     outline: none;
 }
 
-/* Responsive */
 @media (max-width: 600px) {
     .header {
         min-height: 60px;

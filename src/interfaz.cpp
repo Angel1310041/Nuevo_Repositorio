@@ -66,7 +66,6 @@ void procesarArchivoJSON(const char* path, AsyncWebServerRequest* request) {
     request->send(200, "application/json", respuesta);
 }
 
-// Función segura para reiniciar
 void programarReinicio() {
     restartTimer.once(1.0, []() {
         ESP.restart();
@@ -92,7 +91,6 @@ void endpointsMProg(void *pvParameters) {
     IPAddress IP = WiFi.softAPIP();
     imprimir("Punto de acceso creado: " + IP.toString());
 
-    // Endpoints
     server.on("/programacion", HTTP_GET, [](AsyncWebServerRequest *request) {
         request->send(200, "text/plain", "Modo Programación Activado");
     });
@@ -110,14 +108,14 @@ void endpointsMProg(void *pvParameters) {
 
     server.on("/reiniciar", HTTP_POST, [](AsyncWebServerRequest *request) {
         request->send(200, "text/plain", "Reiniciando...");
-        programarReinicio(); // usa Ticker en vez de ESP.restart directo
+        programarReinicio(); 
     });
 
     server.on("/guardar-parametros", HTTP_POST,
 [](AsyncWebServerRequest *request) {},
 NULL,
 [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-    // Aumentamos el tamaño del documento JSON si es necesario, 256 puede ser justo
+    
     DynamicJsonDocument doc(512);
     DeserializationError error = deserializeJson(doc, data, len);
 
@@ -126,38 +124,33 @@ NULL,
         return;
     }
 
-    // Extraer los valores del JSON. Usamos get<int>() para asegurar que sean enteros.
-    // Proporcionamos un valor por defecto (-1) para detectar si faltan.
+    
     int nuevoId = doc["id-alarma"].as<int>();
     int nuevaZona = doc["zona"].as<int>();
     int nuevoTipo = doc["tipo-sensor"].as<int>();
 
-    // Validar que los parámetros requeridos estén presentes y sean válidos (opcional pero recomendado)
-    // Puedes añadir validaciones más específicas aquí si es necesario
+    
     if (doc["id-alarma"].isNull() || doc["zona"].isNull() || doc["tipo-sensor"].isNull()) {
          request->send(400, "application/json", "{\"error\": \"Parámetros incompletos o inválidos\"}");
          return;
     }
 
-    // Validar rangos (opcional, basado en tu formulario)
+    
     if (nuevoId < 1000 || nuevoId > 9999 || nuevaZona < 1 || nuevaZona > 512 || nuevoTipo < 0 || nuevoTipo > 9) {
          request->send(400, "application/json", "{\"error\": \"Valores de parámetros fuera de rango\"}");
          return;
     }
 
 
-    // Actualizar la variable global 'activo' con los nuevos valores
-    // Asegúrate de que 'activo' es una variable global de tipo SENSOR
+    
     activo.id = nuevoId;
     activo.zona = nuevaZona;
     activo.tipo = nuevoTipo;
 
-    // Guardar la estructura 'activo' actualizada en la EEPROM en la dirección 0
-    // Asegúrate de que EEPROM.begin(EEPROM_SIZE) con un tamaño suficiente
-    // para la estructura SENSOR ya se llamó en setup().
+    
     EEPROM.put(0, activo);
 
-    // Confirmar la escritura en la EEPROM
+    
     bool success = EEPROM.commit();
 
     if (success) {
@@ -194,6 +187,12 @@ NULL,
         enviarLoraPendiente = true;
         request->send(200, "application/json", "{\"status\": \"Mensaje recibido y será enviado\"}");
     });
+
+    server.on("/enviar-rf-prueba", HTTP_POST, [](AsyncWebServerRequest *request) {
+    Transmisorrf.send(33339001, 32);
+    imprimir("Señal RF de prueba (33339001) enviada desde la interfaz web.", "verde");
+    request->send(200, "application/json", "{\"status\": \"Señal RF de prueba enviada\"}");
+});
 
 
     server.begin();
