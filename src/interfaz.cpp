@@ -229,10 +229,21 @@ NULL,
 });
 
     server.on("/enviar-rf-prueba", HTTP_POST, [](AsyncWebServerRequest *request) {
-    Transmisorrf.send(33339001, 32);
-    imprimir("Señal RF de prueba (33339001) enviada desde la interfaz web.", "verde");
-    request->send(200, "application/json", "{\"status\": \"Señal RF de prueba enviada\"}");
+    if (activo.id == 0) {
+        request->send(400, "application/json", "{\"error\": \"No hay una alarma registrada\"}");
+        return;
+    }
+
+    // Construimos el mensaje RF correctamente:
+    int mensajeRF = (activo.id * 10000) + (9 * 1000) + activo.zona;  // ID en los primeros 4, tipo en el quinto, zona en los últimos 3
+
+    Transmisorrf.send(mensajeRF, 32);
+    imprimir("Señal RF enviada con ID, Tipo de Sensor en el 5to dígito y Zona: " + String(mensajeRF), "verde");
+
+    request->send(200, "application/json", "{\"status\": \"Señal RF enviada con tipo de sensor 9\"}");
 });
+
+
 
 
     server.begin();

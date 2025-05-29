@@ -132,57 +132,65 @@ void blinkLed() {
 }
 
 void manejarEntradas() {
-  static unsigned long t = 0, progStart = 0;
-  static bool esperandoLiberar = false;
-  static bool botonAnterior = HIGH;
+    static unsigned long t = 0, progStart = 0;
+    static bool esperandoLiberar = false;
+    static bool botonAnterior = HIGH;
 
-  int mq6 = digitalRead(MQ6_PIN);
-  int progEstado = digitalRead(prog);
-  int estadoBoton = digitalRead(BOTON_PRUEBA_PIN);
+    int mq6 = digitalRead(MQ6_PIN);
+    int progEstado = digitalRead(prog);
+    int estadoBoton = digitalRead(BOTON_PRUEBA_PIN);
 
-  if (progEstado == LOW) {
-    if (!progStart) progStart = millis();
-    if (!modoprog && millis() - progStart >= 2000 && !esperandoLiberar) {
-      modoprog = esperandoLiberar = true;
-      entrarmodoprog();
-      mostrarImagen(img4);
-      if (!modoprog) imprimir("Entrando en modo programacion...", "cyan");
-    }
-  } else {
-    progStart = 0;
-    esperandoLiberar = false;
-  }
-
-  if (!modoprog) {
-    if (millis() - t > 10000) {
-      imprimir("Lectura MQ-6: " + String(mq6));
-      t = millis();
+    // Modo programación si el botón está presionado por más de 2 segundos
+    if (progEstado == LOW) {
+        if (!progStart) progStart = millis();
+        if (!modoprog && millis() - progStart >= 2000 && !esperandoLiberar) {
+            modoprog = esperandoLiberar = true;
+            entrarmodoprog();
+            mostrarImagen(img4);
+            if (!modoprog) imprimir("Entrando en modo programación...", "cyan");
+        }
+    } else {
+        progStart = 0;
+        esperandoLiberar = false;
     }
 
-    if (mq6 == LOW && !variableDetectada) {
+    // Lectura periódica del sensor MQ-6
+    if (!modoprog) {
+        if (millis() - t > 10000) {
+            imprimir("Lectura MQ-6: " + String(mq6));
+            t = millis();
+        }
 
-      Transmisorrf.send(33330001, 32);
-      mostrarImagenPorTipoSensor(0);
-      blinkLed();
-      variableDetectada = true;
-      imprimir("¡Gas detectado! Alerta RF enviada.", "rojo");
-    } else if (mq6 == HIGH) {
-      variableDetectada = false;
+        // Si se detecta gas, envía alerta por RF
+        if (mq6 == LOW && !variableDetectada) {
+            int mensajeRF = (activo.id * 10000) + (activo.tipo * 1000) + activo.zona;
+            Transmisorrf.send(mensajeRF, 32);
+            mostrarImagenPorTipoSensor(activo.tipo);
+            blinkLed();
+            variableDetectada = true;
+            imprimir("¡Gas detectado! Alerta RF enviada: " + String(mensajeRF), "rojo");
+        } else if (mq6 == HIGH) {
+            variableDetectada = false;
+        }
+
+        if (estadoBoton == LOW && botonAnterior == HIGH) {
+    if (activo.id != -1 && activo.zona != -1) { 
+        int mensajeRF = (activo.id * 10000) + (9 * 1000) + activo.zona; // Usa los valores reales de EEPROM
+        Transmisorrf.send(mensajeRF, 32);
+        blinkLed();
+        mostrarImagen(img2);
+        imprimir("Señal RF enviada con datos registrados y tipo sensor 9: " + String(mensajeRF), "verde");
+    } else {
+        imprimir("Error: No hay datos registrados en EEPROM", "rojo");
+    }
+}
+        botonAnterior = estadoBoton;
     }
 
-    if (estadoBoton == LOW && botonAnterior == HIGH) {
-      Transmisorrf.send(33339001, 32);
-      blinkLed();
-      mostrarImagen(img2);
-      imprimir("Código de prueba RF enviado: 33339030", "verde");
+    // Restaurar pantalla después de 10 segundos si se mostró imagen de alerta
+    if (!modoprog && imagenMostrada == 2 && millis() - tiempoUltimaImagen >= 10000) {
+        mostrarInicio();
     }
-    botonAnterior = estadoBoton;
-  }
-
-
-  if (!modoprog && imagenMostrada == 2 && millis() - tiempoUltimaImagen >= 10000) {
-    mostrarInicio();
-  }
 }
 
 void procesarEnvioLora() {
