@@ -1,3 +1,9 @@
+let parametrosActuales = {
+    "id-alarma": null,
+    "zona": null,
+    "tipo-sensor": null
+};
+
 function menubar() {
     const menu = document.getElementById('menuu');
     menu.classList.toggle('activo');
@@ -67,6 +73,11 @@ function fetchAndDisplayParameters() {
                 resumenTipo.textContent = tipoSensorText;
                 resumenActualizacion.textContent = new Date().toLocaleString();
                 console.log("Parámetros actualizados correctamente.");
+
+                // Actualizar parametrosActuales para enviar RF con los datos actuales
+                parametrosActuales["id-alarma"] = data.id;
+                parametrosActuales["zona"] = data.zona;
+                parametrosActuales["tipo-sensor"] = data.tipo;
             } else {
                 console.error("No se encontraron todos los elementos de resumen.");
             }
@@ -122,80 +133,107 @@ function mostrarPantallaLora(numero) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    fetchAndDisplayParameters();
+    const btnGuardar = document.getElementById('btnGuardar');
+    const btnReiniciar = document.getElementById('btnReiniciar');
+    const btnMostrarPantalla = document.getElementById('btnMostrarPantalla');
+    const btnEnviarLora = document.getElementById('btnEnviarLora');
+    const btnObtenerParametros = document.getElementById('btnObtenerParametros');
+    const btnEnviarRFPrueba = document.getElementById('btnEnviarRFPrueba');
 
-    const form = document.getElementById('form-parametros');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const idAlarma = document.getElementById('id-alarma').value;
-            const zona = document.getElementById('zona').value;
-            const tipoSensorSelect = document.getElementById('tipo-sensor');
-            const tipoSensor = tipoSensorSelect.value;
-            const tipoSensorText = tipoSensorSelect.options[tipoSensorSelect.selectedIndex].text;
+    // Guardar parámetros
+    btnGuardar.addEventListener('click', () => {
+        const idAlarma = parseInt(document.getElementById('idAlarma').value);
+        const zona = parseInt(document.getElementById('zona').value);
+        const tipoSensor = parseInt(document.getElementById('tipoSensor').value);
 
-            if (!/^\d{4}$/.test(idAlarma)) {
-                alert('El ID de la alarma debe ser un número de 4 dígitos.');
-                return;
-            }
+        const data = {
+            "id-alarma": idAlarma,
+            "zona": zona,
+            "tipo-sensor": tipoSensor
+        };
 
-            const parametros = {
-                "id-alarma": parseInt(idAlarma),
-                "zona": parseInt(zona),
-                "tipo-sensor": parseInt(tipoSensor)
-            };
+        fetch('/guardar-parametros', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(json => alert(JSON.stringify(json)))
+        .catch(err => alert('Error: ' + err));
+    });
 
-            console.log("Enviando parámetros:", parametros);
-            fetch("/guardar-parametros", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(parametros)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status) {
-                    alert(data.status);
-                    document.getElementById('resumen-id').textContent = idAlarma;
-                    document.getElementById('resumen-zona').textContent = zona;
-                    document.getElementById('resumen-tipo-sensor').textContent = tipoSensorText;
-                    document.getElementById('resumen-actualizacion').textContent = new Date().toLocaleString();
-                    console.log("Resumen actualizado.");
-                } else if (data.error) {
-                    alert("Error: " + data.error);
-                } else {
-                    alert("Respuesta desconocida del servidor.");
-                }
-            })
-            .catch(error => {
-                alert("Error de comunicación con el servidor.");
-                console.error("Error en fetch:", error);
-            });
-        });
+    // Reiniciar dispositivo
+    btnReiniciar.addEventListener('click', () => {
+        fetch('/reiniciar', { method: 'POST' })
+        .then(() => alert('Reiniciando dispositivo...'))
+        .catch(err => alert('Error: ' + err));
+    });
+
+    // Mostrar pantalla
+    btnMostrarPantalla.addEventListener('click', () => {
+        const numero = parseInt(document.getElementById('numeroPantalla').value);
+        const data = { numero };
+
+        fetch('/mostrar-pantalla', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(json => alert(JSON.stringify(json)))
+        .catch(err => alert('Error: ' + err));
+    });
+
+    // Enviar mensaje por Lora
+    btnEnviarLora.addEventListener('click', () => {
+        const mensaje = document.getElementById('mensajeLora').value;
+        const data = { mensaje };
+
+        fetch('/enviar-lora', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(json => alert(JSON.stringify(json)))
+        .catch(err => alert('Error: ' + err));
+    });
+
+    btnObtenerParametros.addEventListener('click', () => {
+        fetch('/get-parametros')
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('idAlarma').value = data.id;
+            document.getElementById('zona').value = data.zona;
+            document.getElementById('tipoSensor').value = data.tipo;
+            alert('Parámetros cargados');
+        })
+        .catch(err => alert('Error: ' + err));
+    });
+
+   // Enviar señal de prueba RF con tipo 9
+btnEnviarRFPrueba.addEventListener('click', () => {
+    if (parametrosActuales["id-alarma"] === null ||
+        parametrosActuales["zona"] === null ||
+        parametrosActuales["tipo-sensor"] === null) {
+        alert("Primero debes obtener y guardar los parámetros.");
+        return;
     }
 
-    const btnEnviarRF = document.getElementById('btn-enviar-rf');
-    if (btnEnviarRF) {
-        btnEnviarRF.addEventListener('click', () => {
-            console.log("Enviando señal RF de prueba...");
-            fetch("/enviar-rf-prueba", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({})
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status) {
-                    alert(data.status);
-                } else if (data.error) {
-                    alert("Error: " + data.error);
-                } else {
-                    alert("Respuesta desconocida del servidor.");
-                }
-            })
-            .catch(error => {
-                alert("Error de comunicación con el servidor al enviar RF.");
-                console.error("Error en fetch:", error);
-            });
-        });
-    }
+    const datosPrueba = {
+        "id-alarma": parametrosActuales["id-alarma"],
+        "zona": parametrosActuales["zona"],
+        "tipo-sensor": 9 // Forzar tipo 9 para prueba
+    };
+
+    fetch('/enviar-rf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datosPrueba)
+    })
+    .then(res => res.json())
+    .then(json => alert(`RF de prueba enviado: ${JSON.stringify(json)}`))
+    .catch(err => alert('Error: ' + err));
+});
+
 });

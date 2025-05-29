@@ -112,131 +112,125 @@ void endpointsMProg(void *pvParameters) {
     });
 
     server.on("/guardar-parametros", HTTP_POST,
-[](AsyncWebServerRequest *request) {},
-NULL,
-[](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-    
-    DynamicJsonDocument doc(512);
-    DeserializationError error = deserializeJson(doc, data, len);
+        [](AsyncWebServerRequest *request) {},
+        NULL,
+        [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+            DynamicJsonDocument doc(512);
+            DeserializationError error = deserializeJson(doc, data, len);
 
-    if (error) {
-        request->send(400, "application/json", "{\"error\": \"JSON inválido: " + String(error.c_str()) + "\"}");
-        return;
-    }
+            if (error) {
+                request->send(400, "application/json", "{\"error\": \"JSON inválido: " + String(error.c_str()) + "\"}");
+                return;
+            }
 
-    
-    int nuevoId = doc["id-alarma"].as<int>();
-    int nuevaZona = doc["zona"].as<int>();
-    int nuevoTipo = doc["tipo-sensor"].as<int>();
+            if (doc["id-alarma"].isNull() || doc["zona"].isNull() || doc["tipo-sensor"].isNull()) {
+                request->send(400, "application/json", "{\"error\": \"Parámetros incompletos o inválidos\"}");
+                return;
+            }
 
-    
-    if (doc["id-alarma"].isNull() || doc["zona"].isNull() || doc["tipo-sensor"].isNull()) {
-         request->send(400, "application/json", "{\"error\": \"Parámetros incompletos o inválidos\"}");
-         return;
-    }
+            int nuevoId = doc["id-alarma"].as<int>();
+            int nuevaZona = doc["zona"].as<int>();
+            int nuevoTipo = doc["tipo-sensor"].as<int>();
 
-    
-    if (nuevoId < 1000 || nuevoId > 9999 || nuevaZona < 1 || nuevaZona > 512 || nuevoTipo < 0 || nuevoTipo > 9) {
-         request->send(400, "application/json", "{\"error\": \"Valores de parámetros fuera de rango\"}");
-         return;
-    }
+            if (nuevoId < 1000 || nuevoId > 9999 || nuevaZona < 1 || nuevaZona > 512 || nuevoTipo < 0 || nuevoTipo > 9) {
+                request->send(400, "application/json", "{\"error\": \"Valores de parámetros fuera de rango\"}");
+                return;
+            }
 
+            activo.id = nuevoId;
+            activo.zona = nuevaZona;
+            activo.tipo = nuevoTipo;
 
-    
-    activo.id = nuevoId;
-    activo.zona = nuevaZona;
-    activo.tipo = nuevoTipo;
+            EEPROM.put(0, activo);
+            bool success = EEPROM.commit();
 
-    
-    EEPROM.put(0, activo);
-
-    
-    bool success = EEPROM.commit();
-
-    if (success) {
-        Serial.println("Parámetros guardados en EEPROM correctamente.");
-        request->send(200, "application/json", "{\"status\": \"Parámetros guardados\"}");
-    } else {
-        Serial.println("Error al guardar parámetros en EEPROM.");
-        request->send(500, "application/json", "{\"error\": \"Error al guardar en EEPROM\"}");
-    }
-});
+            if (success) {
+                Serial.println("Parámetros guardados en EEPROM correctamente.");
+                request->send(200, "application/json", "{\"status\": \"Parámetros guardados\"}");
+            } else {
+                Serial.println("Error al guardar parámetros en EEPROM.");
+                request->send(500, "application/json", "{\"error\": \"Error al guardar en EEPROM\"}");
+            }
+    });
 
     server.on("/mostrar-pantalla", HTTP_POST,
-[](AsyncWebServerRequest *request) {},
-NULL,
-[](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-    DynamicJsonDocument doc(256);
-    DeserializationError error = deserializeJson(doc, data, len);
+        [](AsyncWebServerRequest *request) {},
+        NULL,
+        [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+            DynamicJsonDocument doc(256);
+            DeserializationError error = deserializeJson(doc, data, len);
 
-    if (error) {
-        Serial.println("Error al parsear JSON para /mostrar-pantalla: " + String(error.c_str()));
-        request->send(400, "application/json", "{\"error\": \"JSON inválido\"}");
-        return;
-    }
+            if (error) {
+                Serial.println("Error al parsear JSON para /mostrar-pantalla: " + String(error.c_str()));
+                request->send(400, "application/json", "{\"error\": \"JSON inválido\"}");
+                return;
+            }
 
-    if (!doc.containsKey("numero")) {
-        Serial.println("JSON para /mostrar-pantalla no contiene 'numero'.");
-        request->send(400, "application/json", "{\"error\": \"Falta el parámetro 'numero'\"}");
-        return;
-    }
+            if (!doc.containsKey("numero")) {
+                Serial.println("JSON para /mostrar-pantalla no contiene 'numero'.");
+                request->send(400, "application/json", "{\"error\": \"Falta el parámetro 'numero'\"}");
+                return;
+            }
 
-    int numeroPantalla = doc["numero"].as<int>();
+            int numeroPantalla = doc["numero"].as<int>();
+            Serial.printf("Recibida solicitud para mostrar pantalla numero: %d\n", numeroPantalla);
+            mostrarPantallaPorNumero(numeroPantalla);
 
-    Serial.printf("Recibida solicitud para mostrar pantalla numero: %d\n", numeroPantalla);
-    mostrarPantallaPorNumero(numeroPantalla);
-
-    request->send(200, "application/json", "{\"status\": \"Solicitud de pantalla recibida\"}");
-});
+            request->send(200, "application/json", "{\"status\": \"Solicitud de pantalla recibida\"}");
+    });
 
     server.on("/enviar-lora", HTTP_POST,
-    [](AsyncWebServerRequest *request) {
-        request->send(400, "application/json", "{\"error\": \"Falta el cuerpo del mensaje\"}");
-    },
-    NULL,
-    [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-        DynamicJsonDocument doc(256);
-        DeserializationError error = deserializeJson(doc, data, len);
-        if (error) {
-            request->send(400, "application/json", "{\"error\": \"JSON no válido\"}");
-            return;
-        }
+        [](AsyncWebServerRequest *request) {
+            request->send(400, "application/json", "{\"error\": \"Falta el cuerpo del mensaje\"}");
+        },
+        NULL,
+        [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+            DynamicJsonDocument doc(256);
+            DeserializationError error = deserializeJson(doc, data, len);
+            if (error) {
+                request->send(400, "application/json", "{\"error\": \"JSON no válido\"}");
+                return;
+            }
 
-        String mensaje = doc["mensaje"] | "";
-        if (mensaje == "") {
-            request->send(400, "application/json", "{\"error\": \"Falta el campo 'mensaje'\"}");
-            return;
-        }
+            String mensaje = doc["mensaje"] | "";
+            if (mensaje == "") {
+                request->send(400, "application/json", "{\"error\": \"Falta el campo 'mensaje'\"}");
+                return;
+            }
 
-        mensajePendiente = mensaje;
-        enviarLoraPendiente = true;
-        request->send(200, "application/json", "{\"status\": \"Mensaje recibido y será enviado\"}");
-    }); 
+            mensajePendiente = mensaje;
+            enviarLoraPendiente = true;
+            request->send(200, "application/json", "{\"status\": \"Mensaje recibido y será enviado\"}");
+        }
+    );
 
     server.on("/get-parametros", HTTP_GET, [](AsyncWebServerRequest *request) {
-    DynamicJsonDocument doc(256);
+        DynamicJsonDocument doc(256);
+        doc["id"] = activo.id;
+        doc["zona"] = activo.zona;
+        doc["tipo"] = activo.tipo;
 
-    doc["id"] = activo.id;
-    doc["zona"] = activo.zona;
-    doc["tipo"] = activo.tipo;
+        String responseJson;
+        serializeJson(doc, responseJson);
+        Serial.println("Enviando parámetros actuales via /get-parametros: " + responseJson);
 
-    String responseJson;
-    serializeJson(doc, responseJson);
-
-    Serial.println("Enviando parámetros actuales via /get-parametros: " + responseJson);
-
-    request->send(200, "application/json", responseJson);
-});
+        request->send(200, "application/json", responseJson);
+    });
 
     server.on("/enviar-rf-prueba", HTTP_POST, [](AsyncWebServerRequest *request) {
-    Transmisorrf.send(33339001, 32);
-    imprimir("Señal RF de prueba (33339001) enviada desde la interfaz web.", "verde");
-    request->send(200, "application/json", "{\"status\": \"Señal RF de prueba enviada\"}");
+    uint32_t id = activo.id;
+    uint16_t zona = activo.zona;
+    uint8_t tipo = 9; // tipo de sensor forzado a 9 para pruebas
+
+    uint32_t mensaje = (tipo << 28) | (zona << 16) | id;
+
+    Transmisorrf.send(mensaje, 32);
+    imprimir("Mensaje RF de prueba enviado: " + String(mensaje), "verde");
+
+    request->send(200, "application/json", "{\"status\": \"Mensaje RF con parámetros enviado\"}");
 });
 
-
     server.begin();
-
     vTaskDelay(100 / portTICK_PERIOD_MS);
     vTaskDelete(NULL);
 }
@@ -255,7 +249,7 @@ void entrarModoProgramacion() {
         NULL,
         2,
         NULL,
-        1 
+        1
     );
 
     imprimir("---# Modo Programación Activado #---", "verde");
@@ -268,4 +262,3 @@ void entrarmodoprog() {
     }
     entrarModoProgramacion();
 }
-
