@@ -238,7 +238,7 @@ NULL,
     int mensajeRF = (activo.id * 10000) + (9 * 1000) + activo.zona;  // ID en los primeros 4, tipo en el quinto, zona en los últimos 3
 
     Transmisorrf.send(mensajeRF, 32);
-    imprimir("Señal RF enviada con ID, Tipo de Sensor en el 5to dígito y Zona: " + String(mensajeRF), "verde");
+    imprimir("Señal RF enviada con datos registrados: " + String(mensajeRF), "verde");
 
     request->send(200, "application/json", "{\"status\": \"Señal RF enviada con tipo de sensor 9\"}");
 });

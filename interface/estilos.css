@@ -1,5 +1,5 @@
 body {
-    background-color: #E8F5E9;
+    background-color: #F8FFDB;
     font-family: 'Segoe UI', Arial, sans-serif;
     font-size: 18px;
     margin: 0;
@@ -8,8 +8,8 @@ body {
 
 .Menu {
     position: fixed;
-    top: 2.5%;
-    left: 2.5%;
+    top: 4%;
+    left: 5%;
     cursor: pointer;
     display: flex;
     flex-direction: column;
@@ -21,16 +21,16 @@ body {
 }
 
 .Menu div {
-    background-color: #096B68;
-    height: 4px;
+    background-color: #000;
+    height: 5px;
     border-radius: 2px;
     width: 100%;
     transition: 0.3s;
 }
 
 .header {
-    background: linear-gradient(90deg, #6FE6FC 60%, #CAE8BD 100%);
-    padding: 12px 0;
+    background:#5CB338;
+    padding: 0px 0;
     text-align: center;
     position: fixed;
     top: 0;
@@ -56,9 +56,9 @@ body {
     left: -220px;
     width: 220px;
     height: 100%;
-    background: #4E71FF;
+    background: #379237;
     color: #fff;
-    box-shadow: 2px 0 8px #64E2B7;
+    box-shadow: 1px 0 5px #000;
     transition: left 0.3s;
     z-index: 1050;
     padding-top: 80px;
@@ -87,10 +87,6 @@ body {
     border-radius: 4px;
 }
 
-.menuu .submenu a:hover {
-    background: #3a4ba0;
-    color: #ffd700;
-}
 
 #pantalla-carga {
     position: fixed;
@@ -110,7 +106,7 @@ body {
 .loader div {
     width: 20px;
     height: 20px;
-    background: #096B68;
+    background: #49FF00;
     border-radius: 50%;
     animation: bounce 0.8s infinite alternate;
 }
@@ -129,7 +125,6 @@ body {
 #apartado-parametros {
     background: #fff;
     border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(9,107,104,0.10);
     max-width: 400px;
     margin: 110px auto 0 auto;
     padding: 32px 24px 24px 24px;
@@ -140,14 +135,14 @@ body {
 #apartado-inicio h2,
 #apartado-pruebas h2,
 #apartado-parametros h2 {
-    color: #096B68;
+    color: #06D001;
     margin-bottom: 18px;
     font-size: 1.5rem;
     letter-spacing: 1px;
 }
 
 #apartado-inicio strong {
-    color: #096B68;
+    color: #399918;
 }
 
 
@@ -156,7 +151,7 @@ body {
 #apartado-inicio button,
 #btn-enviar-rf,
 #btn-guardar-parametros {
-    background: linear-gradient(90deg, #096B68 70%, #0bbfae 100%);
+    background: #54B435;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -176,7 +171,7 @@ body {
 #apartado-inicio button:hover,
 #btn-enviar-rf:hover,
 #btn-guardar-parametros:hover {
-    background: linear-gradient(90deg, #0bbfae 60%, #096B68 100%);
+    background: #65B741;
     transform: translateY(-2px) scale(1.03);
 }
 
@@ -185,7 +180,7 @@ body {
     list-style: none;
     padding: 0;
     margin: 0 auto;
-    max-width: 220px;
+    max-width: 380px;
 }
 
 #lista-pantallas li {
@@ -210,7 +205,7 @@ body {
 
 #form-parametros input[type="text"],
 #form-parametros input[type="number"] {
-    width: 80%;
+    width: 100%;
     padding: 9px;
     margin-bottom: 16px;
     border: 1px solid #b0b0b0;
@@ -223,7 +218,7 @@ body {
 
 #form-parametros input[type="text"]:focus,
 #form-parametros input[type="number"]:focus {
-    border: 1.5px solid #096B68;
+    border: 1.5px solid #000;
     outline: none;
 }
 

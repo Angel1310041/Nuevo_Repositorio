@@ -140,7 +140,6 @@ void manejarEntradas() {
     int progEstado = digitalRead(prog);
     int estadoBoton = digitalRead(BOTON_PRUEBA_PIN);
 
-    // Modo programación si el botón está presionado por más de 2 segundos
     if (progEstado == LOW) {
         if (!progStart) progStart = millis();
         if (!modoprog && millis() - progStart >= 2000 && !esperandoLiberar) {
@@ -175,19 +174,18 @@ void manejarEntradas() {
 
         if (estadoBoton == LOW && botonAnterior == HIGH) {
     if (activo.id != -1 && activo.zona != -1) { 
-        int mensajeRF = (activo.id * 10000) + (9 * 1000) + activo.zona; // Usa los valores reales de EEPROM
+        int mensajeRF = (activo.id * 10000) + (9 * 1000) + activo.zona; 
         Transmisorrf.send(mensajeRF, 32);
         blinkLed();
         mostrarImagen(img2);
-        imprimir("Señal RF enviada con datos registrados y tipo sensor 9: " + String(mensajeRF), "verde");
+        imprimir("Señal RF enviada con datos registrados: " + String(mensajeRF), "verde");
     } else {
         imprimir("Error: No hay datos registrados en EEPROM", "rojo");
     }
 }
         botonAnterior = estadoBoton;
     }
-
-    // Restaurar pantalla después de 10 segundos si se mostró imagen de alerta
+    
     if (!modoprog && imagenMostrada == 2 && millis() - tiempoUltimaImagen >= 10000) {
         mostrarInicio();
     }
