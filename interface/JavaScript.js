@@ -5,14 +5,21 @@ function menubar() {
 
 function showContent(seccion) {
     const pantallaCarga = document.getElementById('pantalla-carga');
+    const loader = pantallaCarga.querySelector('.loader-bolas');
     const secciones = ['apartado-inicio', 'apartado-pruebas', 'apartado-parametros'];
 
+    // Mostrar pantalla carga y activar animación
     pantallaCarga.style.display = 'flex';
+    loader.classList.remove('stop-animation');  // Quitar clase que para animación
+
     secciones.forEach(id => document.getElementById(id).style.display = 'none');
     document.getElementById('menuu').classList.remove('activo');
 
     setTimeout(() => {
+        // Ocultar pantalla carga y parar animación
         pantallaCarga.style.display = 'none';
+        loader.classList.add('stop-animation');  // Agregar clase que detiene animación
+
         switch (seccion) {
             case 'inicio':
                 document.getElementById('apartado-inicio').style.display = 'block';
@@ -31,7 +38,7 @@ function showContent(seccion) {
             default:
                 console.warn(`Sección desconocida: ${seccion}`);
         }
-    }, 1000);
+    }, 2000); // 5 segundos animación
 }
 
 function fetchAndDisplayParameters() {

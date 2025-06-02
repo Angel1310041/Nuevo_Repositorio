@@ -83,14 +83,11 @@ void mostrarImagenPorTipoSensor(int tipoSensor) {
 
 void mostrarPantallaPorNumero(int numero) {
     Serial.printf("Mostrando contenido para pantalla numero: %d\n", numero);
-
     if (!Heltec.display) {
         Serial.println("Error: Display no inicializado.");
         return;
     }
-
     Heltec.display->clear(); 
-
     switch (numero) {
         case 1:
             Heltec.display->drawXbm(0, 0, 128, 64, img10);
@@ -108,7 +105,7 @@ void mostrarPantallaPorNumero(int numero) {
             Heltec.display->drawXbm(0, 0, 128, 64, img5);
             break;
         case 6:
-            Heltec.display->drawXbm(0, 0, 128, 64, img6);
+            Heltec.display->drawXbm(0, 0, 128, 64, img2);
             break;
         case 7:
             Heltec.display->drawXbm(0, 0, 128, 64, img7);
@@ -118,7 +115,6 @@ void mostrarPantallaPorNumero(int numero) {
             Serial.printf("Numero de pantalla invalido recibido: %d\n", numero);
             break;
     }
-
     Heltec.display->display(); 
 }
 
@@ -135,7 +131,6 @@ void manejarEntradas() {
     static unsigned long t = 0, progStart = 0;
     static bool esperandoLiberar = false;
     static bool botonAnterior = HIGH;
-
     int mq6 = digitalRead(MQ6_PIN);
     int progEstado = digitalRead(prog);
     int estadoBoton = digitalRead(BOTON_PRUEBA_PIN);
@@ -153,14 +148,12 @@ void manejarEntradas() {
         esperandoLiberar = false;
     }
 
-    // Lectura periódica del sensor MQ-6
     if (!modoprog) {
         if (millis() - t > 10000) {
             imprimir("Lectura MQ-6: " + String(mq6));
             t = millis();
         }
 
-        // Si se detecta gas, envía alerta por RF
         if (mq6 == LOW && !variableDetectada) {
             int mensajeRF = (activo.id * 10000) + (activo.tipo * 1000) + activo.zona;
             Transmisorrf.send(mensajeRF, 32);
@@ -207,16 +200,13 @@ void setup() {
   digitalWrite(LED_PIN, LOW);
   pinMode(prog, INPUT_PULLUP);
   pinMode(BOTON_PRUEBA_PIN, INPUT_PULLUP);
-
   Heltec.begin(true, false, true);
   mostrarInicio();
-
   Transmisorrf.enableTransmit(33);
-
   EEPROM.get(0, activo); 
 
   if (activo.id < 1000 || activo.id > 9999 ||
-      activo.zona < 1 || activo.zona > 512 ||
+      activo.zona < 1 || activo.zona > 510 ||
       activo.tipo < 0 || (activo.tipo > 7 && activo.tipo != 9)) 
   {
     imprimir("Datos EEPROM inválidos o fuera de rango, restaurando...", "amarillo");

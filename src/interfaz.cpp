@@ -14,7 +14,7 @@ IPAddress local_IP(192, 168, 8, 28);
 IPAddress gateway(192, 168, 8, 1);
 IPAddress subnet(255, 255, 255, 0);
 
-const char* ssidAP = "MiInterfazAP";
+const char* ssidAP = "SENSOR-ABM";
 const char* passwordAP = "12345678";
 
 AsyncWebServer server(80);
@@ -71,26 +71,21 @@ void programarReinicio() {
         ESP.restart();
     });
 }
-
 void endpointsMProg(void *pvParameters) {
     animacionCarga();
-
     WiFi.mode(WIFI_AP);
     if (!WiFi.softAPConfig(local_IP, gateway, subnet)) {
-        imprimir("Error al configurar la IP estática");
-        vTaskDelete(NULL);
+        imprimir("Error al configurar IP estática");
+        vTaskDelete(nullptr);
         return;
     }
 
     if (!WiFi.softAP(ssidAP, passwordAP, 6, 0, 4)) {
         imprimir("Error al iniciar el AP");
-        vTaskDelete(NULL);
+        vTaskDelete(nullptr);
         return;
     }
-
-    IPAddress IP = WiFi.softAPIP();
-    imprimir("Punto de acceso creado: " + IP.toString());
-
+    imprimir("Punto de acceso creado: " + WiFi.softAPIP().toString());
     server.on("/programacion", HTTP_GET, [](AsyncWebServerRequest *request) {
         request->send(200, "text/plain", "Modo Programación Activado");
     });
@@ -101,155 +96,106 @@ void endpointsMProg(void *pvParameters) {
             request->send(404, "text/plain", "Archivo no encontrado");
             return;
         }
-        AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/interfaz.html.gz", "text/html");
+
+        auto *response = request->beginResponse(SPIFFS, "/interfaz.html.gz", "text/html");
         response->addHeader("Content-Encoding", "gzip");
         request->send(response);
     });
 
     server.on("/reiniciar", HTTP_POST, [](AsyncWebServerRequest *request) {
         request->send(200, "text/plain", "Reiniciando...");
-        programarReinicio(); 
+        programarReinicio();
     });
 
     server.on("/guardar-parametros", HTTP_POST,
-[](AsyncWebServerRequest *request) {},
-NULL,
-[](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-    
-    DynamicJsonDocument doc(512);
-    DeserializationError error = deserializeJson(doc, data, len);
+        [](AsyncWebServerRequest *request) {}, nullptr,
+        [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t, size_t) {
+            DynamicJsonDocument doc(512);
+            if (deserializeJson(doc, data, len)) {
+                request->send(400, "application/json", "{\"error\": \"JSON inválido\"}");
+                return;
+            }
 
-    if (error) {
-        request->send(400, "application/json", "{\"error\": \"JSON inválido: " + String(error.c_str()) + "\"}");
-        return;
-    }
+            if (!doc.containsKey("id-alarma") || !doc.containsKey("zona") || !doc.containsKey("tipo-sensor")) {
+                request->send(400, "application/json", "{\"error\": \"Parámetros incompletos\"}");
+                return;
+            }
 
-    
-    int nuevoId = doc["id-alarma"].as<int>();
-    int nuevaZona = doc["zona"].as<int>();
-    int nuevoTipo = doc["tipo-sensor"].as<int>();
+            int id = doc["id-alarma"];
+            int zona = doc["zona"];
+            int tipo = doc["tipo-sensor"];
 
-    
-    if (doc["id-alarma"].isNull() || doc["zona"].isNull() || doc["tipo-sensor"].isNull()) {
-         request->send(400, "application/json", "{\"error\": \"Parámetros incompletos o inválidos\"}");
-         return;
-    }
-
-    
-    if (nuevoId < 1000 || nuevoId > 9999 || nuevaZona < 1 || nuevaZona > 512 || nuevoTipo < 0 || nuevoTipo > 9) {
-         request->send(400, "application/json", "{\"error\": \"Valores de parámetros fuera de rango\"}");
-         return;
-    }
-
-
-    
-    activo.id = nuevoId;
-    activo.zona = nuevaZona;
-    activo.tipo = nuevoTipo;
-
-    
-    EEPROM.put(0, activo);
-
-    
-    bool success = EEPROM.commit();
-
-    if (success) {
-        Serial.println("Parámetros guardados en EEPROM correctamente.");
-        request->send(200, "application/json", "{\"status\": \"Parámetros guardados\"}");
-    } else {
-        Serial.println("Error al guardar parámetros en EEPROM.");
-        request->send(500, "application/json", "{\"error\": \"Error al guardar en EEPROM\"}");
-    }
-});
-
+            if (id < 1000 || id > 9999 || zona < 1 || zona > 512 || tipo < 0 || tipo > 9) {
+                request->send(400, "application/json", "{\"error\": \"Parámetros fuera de rango\"}");
+                return;
+            }
+            activo.id = id;
+            activo.zona = zona;
+            activo.tipo = tipo;
+            if (EEPROM.put(0, activo), EEPROM.commit()) {
+                request->send(200, "application/json", "{\"status\": \"Parámetros guardados\"}");
+            } else {
+                request->send(500, "application/json", "{\"error\": \"Error al guardar en EEPROM\"}");
+            }
+        });
     server.on("/mostrar-pantalla", HTTP_POST,
-[](AsyncWebServerRequest *request) {},
-NULL,
-[](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-    DynamicJsonDocument doc(256);
-    DeserializationError error = deserializeJson(doc, data, len);
-
-    if (error) {
-        Serial.println("Error al parsear JSON para /mostrar-pantalla: " + String(error.c_str()));
-        request->send(400, "application/json", "{\"error\": \"JSON inválido\"}");
-        return;
-    }
-
-    if (!doc.containsKey("numero")) {
-        Serial.println("JSON para /mostrar-pantalla no contiene 'numero'.");
-        request->send(400, "application/json", "{\"error\": \"Falta el parámetro 'numero'\"}");
-        return;
-    }
-
-    int numeroPantalla = doc["numero"].as<int>();
-
-    Serial.printf("Recibida solicitud para mostrar pantalla numero: %d\n", numeroPantalla);
-    mostrarPantallaPorNumero(numeroPantalla);
-
-    request->send(200, "application/json", "{\"status\": \"Solicitud de pantalla recibida\"}");
-});
+        [](AsyncWebServerRequest *request) {}, nullptr,
+        [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t, size_t) {
+            DynamicJsonDocument doc(256);
+            if (deserializeJson(doc, data, len)) {
+                request->send(400, "application/json", "{\"error\": \"JSON inválido\"}");
+                return;
+            }
+            if (!doc.containsKey("numero")) {
+                request->send(400, "application/json", "{\"error\": \"Falta el parámetro 'numero'\"}");
+                return;
+            }
+            mostrarPantallaPorNumero(doc["numero"]);
+            request->send(200, "application/json", "{\"status\": \"Pantalla mostrada\"}");
+        });
 
     server.on("/enviar-lora", HTTP_POST,
-    [](AsyncWebServerRequest *request) {
-        request->send(400, "application/json", "{\"error\": \"Falta el cuerpo del mensaje\"}");
-    },
-    NULL,
-    [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-        DynamicJsonDocument doc(256);
-        DeserializationError error = deserializeJson(doc, data, len);
-        if (error) {
-            request->send(400, "application/json", "{\"error\": \"JSON no válido\"}");
-            return;
-        }
-
-        String mensaje = doc["mensaje"] | "";
-        if (mensaje == "") {
-            request->send(400, "application/json", "{\"error\": \"Falta el campo 'mensaje'\"}");
-            return;
-        }
-
-        mensajePendiente = mensaje;
-        enviarLoraPendiente = true;
-        request->send(200, "application/json", "{\"status\": \"Mensaje recibido y será enviado\"}");
-    }); 
-
+        [](AsyncWebServerRequest *request) {
+            request->send(400, "application/json", "{\"error\": \"Falta el cuerpo del mensaje\"}");
+        },
+        nullptr,
+        [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t, size_t) {
+            DynamicJsonDocument doc(256);
+            if (deserializeJson(doc, data, len)) {
+                request->send(400, "application/json", "{\"error\": \"JSON inválido\"}");
+                return;
+            }
+            String mensaje = doc["mensaje"] | "";
+            if (mensaje.isEmpty()) {
+                request->send(400, "application/json", "{\"error\": \"Falta el campo 'mensaje'\"}");
+                return;
+            }
+            mensajePendiente = mensaje;
+            enviarLoraPendiente = true;
+            request->send(200, "application/json", "{\"status\": \"Mensaje recibido\"}");
+        });
     server.on("/get-parametros", HTTP_GET, [](AsyncWebServerRequest *request) {
-    DynamicJsonDocument doc(256);
-
-    doc["id"] = activo.id;
-    doc["zona"] = activo.zona;
-    doc["tipo"] = activo.tipo;
-
-    String responseJson;
-    serializeJson(doc, responseJson);
-
-    Serial.println("Enviando parámetros actuales via /get-parametros: " + responseJson);
-
-    request->send(200, "application/json", responseJson);
-});
-
+        DynamicJsonDocument doc(256);
+        doc["id"] = activo.id;
+        doc["zona"] = activo.zona;
+        doc["tipo"] = activo.tipo;
+        String json;
+        serializeJson(doc, json);
+        request->send(200, "application/json", json);
+    });
     server.on("/enviar-rf-prueba", HTTP_POST, [](AsyncWebServerRequest *request) {
-    if (activo.id == 0) {
-        request->send(400, "application/json", "{\"error\": \"No hay una alarma registrada\"}");
-        return;
-    }
-
-    // Construimos el mensaje RF correctamente:
-    int mensajeRF = (activo.id * 10000) + (9 * 1000) + activo.zona;  // ID en los primeros 4, tipo en el quinto, zona en los últimos 3
-
-    Transmisorrf.send(mensajeRF, 32);
-    imprimir("Señal RF enviada con datos registrados: " + String(mensajeRF), "verde");
-
-    request->send(200, "application/json", "{\"status\": \"Señal RF enviada con tipo de sensor 9\"}");
-});
-
-
-
-
+        if (activo.id == 0) {
+            request->send(400, "application/json", "{\"error\": \"No hay alarma registrada\"}");
+            return;
+        }
+        int mensajeRF = activo.id * 10000 + 9000 + activo.zona;
+        Transmisorrf.send(mensajeRF, 32);
+        imprimir("Señal RF enviada: " + String(mensajeRF), "verde");
+        request->send(200, "application/json", "{\"status\": \"Señal RF enviada\"}");
+    });
     server.begin();
-
     vTaskDelay(100 / portTICK_PERIOD_MS);
-    vTaskDelete(NULL);
+    vTaskDelete(nullptr);
 }
 
 void entrarModoProgramacion() {
@@ -258,20 +204,17 @@ void entrarModoProgramacion() {
     digitalWrite(LED_PIN, HIGH);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     imprimir("Activando Modo Programación...");
-
     xTaskCreatePinnedToCore(
         endpointsMProg,
         "endpoints",
         8192,
-        NULL,
+        nullptr,
         2,
-        NULL,
-        1 
+        nullptr,
+        1
     );
-
     imprimir("---# Modo Programación Activado #---", "verde");
 }
-
 void entrarmodoprog() {
     if (!SPIFFS.begin(true)) {
         imprimir("Error al montar SPIFFS");
@@ -279,4 +222,3 @@ void entrarmodoprog() {
     }
     entrarModoProgramacion();
 }
-
