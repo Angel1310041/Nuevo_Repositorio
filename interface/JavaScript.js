@@ -30,8 +30,12 @@ function showContent(seccion) {
                 document.getElementById('apartado-parametros').style.display = 'block';
                 break;
             case 'salir':
-                fetch('/reiniciar', { method: 'POST' })
-                    .then(() => setTimeout(() => location.reload(), 1000));
+                if (confirm("¿Desea realmente salir?")) {
+                    fetch('/reiniciar', { method: 'POST' })
+                        .then(() => setTimeout(() => location.reload(), 1000));
+                } else {
+                    
+                }
                 break;
             default:
                 console.warn(`Sección desconocida: ${seccion}`);
@@ -73,12 +77,7 @@ function fetchAndDisplayParameters() {
                 resumenTipo.textContent = tipoSensorText;
                 resumenActualizacion.textContent = new Date().toLocaleString();
 
-                let zonaFormateada = String(data.zona);
-                if (zonaFormateada.length === 1) {
-                    zonaFormateada = zonaFormateada.padStart(4, '0');
-                } else if (zonaFormateada.length === 2) {
-                    zonaFormateada = zonaFormateada.padStart(3, '0');
-                }
+                let zonaFormateada = String(data.zona).padStart(3, '0');
 
                 const senalConcatenada = `${String(data.id).padStart(4, '0')}${String(data.tipo)}${zonaFormateada}`;
                 resumenSenal.textContent = senalConcatenada;
@@ -156,6 +155,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            if (!/^\d{1,3}$/.test(zona)) {
+                alert('La zona debe ser un número de 1 a 3 dígitos.');
+                return;
+            }
+
             const parametros = {
                 "id-alarma": idAlarma,
                 "zona": zona,
@@ -177,13 +181,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('resumen-tipo-sensor').textContent = tipoSensorText;
                     document.getElementById('resumen-actualizacion').textContent = new Date().toLocaleString();
 
-                    // Formatear zona con ceros a la izquierda
-                    let zonaFormateada = zona;
-                    if (zona.length == 1) {
-                        zonaFormateada = zona.padStart(3, '0');
-                    } else if (zona.length == 2) {
-                        zonaFormateada = zona.padStart(1, '0');
-                    }
+                    let zonaFormateada = zona.padStart(3, '0');
+                    console.log("Zona formateada:", zonaFormateada);
 
                     const senalConcatenada = `${idAlarma}${tipoSensor}${zonaFormateada}`;
                     document.getElementById('senal-registrada').textContent = senalConcatenada;
@@ -197,6 +196,33 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(error => {
                 alert("Error de comunicación con el servidor.");
+                console.error("Error en fetch:", error);
+            });
+        });
+    }
+
+    // Función añadida para botón enviar RF prueba
+    const btnEnviarRF = document.getElementById('btn-enviar-rf');
+    if (btnEnviarRF) {
+        btnEnviarRF.addEventListener('click', () => {
+            console.log("Enviando señal RF de prueba...");
+            fetch("/enviar-rf-prueba", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status) {
+                    alert(data.status);
+                } else if (data.error) {
+                    alert("Error: " + data.error);
+                } else {
+                    alert("Respuesta desconocida del servidor.");
+                }
+            })
+            .catch(error => {
+                alert("Error de comunicación con el servidor al enviar RF.");
                 console.error("Error en fetch:", error);
             });
         });
