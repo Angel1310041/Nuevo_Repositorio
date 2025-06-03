@@ -8,17 +8,15 @@ function showContent(seccion) {
     const loader = pantallaCarga.querySelector('.loader-bolas');
     const secciones = ['apartado-inicio', 'apartado-pruebas', 'apartado-parametros'];
 
-    // Mostrar pantalla carga y activar animación
     pantallaCarga.style.display = 'flex';
-    loader.classList.remove('stop-animation');  // Quitar clase que para animación
+    loader.classList.remove('stop-animation');
 
     secciones.forEach(id => document.getElementById(id).style.display = 'none');
     document.getElementById('menuu').classList.remove('activo');
 
     setTimeout(() => {
-        // Ocultar pantalla carga y parar animación
         pantallaCarga.style.display = 'none';
-        loader.classList.add('stop-animation');  // Agregar clase que detiene animación
+        loader.classList.add('stop-animation');
 
         switch (seccion) {
             case 'inicio':
@@ -38,7 +36,7 @@ function showContent(seccion) {
             default:
                 console.warn(`Sección desconocida: ${seccion}`);
         }
-    }, 2000); // 5 segundos animación
+    }, 2000);
 }
 
 function fetchAndDisplayParameters() {
@@ -53,6 +51,7 @@ function fetchAndDisplayParameters() {
             const resumenZona = document.getElementById('resumen-zona');
             const resumenTipo = document.getElementById('resumen-tipo-sensor');
             const resumenActualizacion = document.getElementById('resumen-actualizacion');
+            const resumenSenal = document.getElementById('senal-registrada');
 
             const tipoSensorMap = {
                 0: "0 - Gas LP",
@@ -68,11 +67,22 @@ function fetchAndDisplayParameters() {
 
             const tipoSensorText = tipoSensorMap[data.tipo] || `Tipo desconocido (${data.tipo})`;
 
-            if (resumenId && resumenZona && resumenTipo && resumenActualizacion) {
+            if (resumenId && resumenZona && resumenTipo && resumenActualizacion && resumenSenal) {
                 resumenId.textContent = data.id;
                 resumenZona.textContent = data.zona;
                 resumenTipo.textContent = tipoSensorText;
                 resumenActualizacion.textContent = new Date().toLocaleString();
+
+                let zonaFormateada = String(data.zona);
+                if (zonaFormateada.length === 1) {
+                    zonaFormateada = zonaFormateada.padStart(4, '0');
+                } else if (zonaFormateada.length === 2) {
+                    zonaFormateada = zonaFormateada.padStart(3, '0');
+                }
+
+                const senalConcatenada = `${String(data.id).padStart(4, '0')}${String(data.tipo)}${zonaFormateada}`;
+                resumenSenal.textContent = senalConcatenada;
+
                 console.log("Parámetros actualizados correctamente.");
             } else {
                 console.error("No se encontraron todos los elementos de resumen.");
@@ -85,16 +95,16 @@ function fetchAndDisplayParameters() {
         });
 }
 
-function enviarLora(mensaje) {
+function enviarLora(senalConcatenada) {
     fetch('/enviar-lora', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mensaje })
+        body: JSON.stringify({ senalConcatenada })
     })
     .then(response => response.json())
     .then(data => {
         if (data.status) {
-            alert(`Mensaje "${mensaje}" enviado correctamente por LoRa.`);
+            alert(`Mensaje "${senalConcatenada}" enviado correctamente por LoRa.`);
         } else if (data.error) {
             alert("Error: " + data.error);
         }
@@ -135,10 +145,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (form) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
-            const idAlarma = document.getElementById('id-alarma').value;
-            const zona = document.getElementById('zona').value;
+            const idAlarma = document.getElementById('id-alarma').value.trim();
+            const zona = document.getElementById('zona').value.trim();
             const tipoSensorSelect = document.getElementById('tipo-sensor');
-            const tipoSensor = tipoSensorSelect.value;
+            const tipoSensor = tipoSensorSelect.value.trim();
             const tipoSensorText = tipoSensorSelect.options[tipoSensorSelect.selectedIndex].text;
 
             if (!/^\d{4}$/.test(idAlarma)) {
@@ -147,9 +157,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const parametros = {
-                "id-alarma": parseInt(idAlarma),
-                "zona": parseInt(zona),
-                "tipo-sensor": parseInt(tipoSensor)
+                "id-alarma": idAlarma,
+                "zona": zona,
+                "tipo-sensor": tipoSensor
             };
 
             console.log("Enviando parámetros:", parametros);
@@ -166,7 +176,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('resumen-zona').textContent = zona;
                     document.getElementById('resumen-tipo-sensor').textContent = tipoSensorText;
                     document.getElementById('resumen-actualizacion').textContent = new Date().toLocaleString();
-                    console.log("Resumen actualizado.");
+
+                    // Formatear zona con ceros a la izquierda
+                    let zonaFormateada = zona;
+                    if (zona.length == 1) {
+                        zonaFormateada = zona.padStart(3, '0');
+                    } else if (zona.length == 2) {
+                        zonaFormateada = zona.padStart(1, '0');
+                    }
+
+                    const senalConcatenada = `${idAlarma}${tipoSensor}${zonaFormateada}`;
+                    document.getElementById('senal-registrada').textContent = senalConcatenada;
+
+                    console.log("Resumen actualizado con señal:", senalConcatenada);
                 } else if (data.error) {
                     alert("Error: " + data.error);
                 } else {
@@ -175,32 +197,6 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(error => {
                 alert("Error de comunicación con el servidor.");
-                console.error("Error en fetch:", error);
-            });
-        });
-    }
-
-    const btnEnviarRF = document.getElementById('btn-enviar-rf');
-    if (btnEnviarRF) {
-        btnEnviarRF.addEventListener('click', () => {
-            console.log("Enviando señal RF de prueba...");
-            fetch("/enviar-rf-prueba", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({})
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status) {
-                    alert(data.status);
-                } else if (data.error) {
-                    alert("Error: " + data.error);
-                } else {
-                    alert("Respuesta desconocida del servidor.");
-                }
-            })
-            .catch(error => {
-                alert("Error de comunicación con el servidor al enviar RF.");
                 console.error("Error en fetch:", error);
             });
         });

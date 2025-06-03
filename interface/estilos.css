@@ -39,13 +39,15 @@ body {
     background-color: #ff9800;
     color: #fff;
     text-align: center;
-    padding: 15px 0;
+    padding: 19px 0;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
+    width: 100%; 
     z-index: 98;
+    max-width: 200%; 
+    margin: 3; 
 }
 
 .header h1 {
@@ -110,52 +112,50 @@ body {
 }
 
 /* Loader */
-#pantalla-carga {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(255, 255, 255, 0.9);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+    /* Loader - Pantalla de carga */
+    #pantalla-carga {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.9); /* Fondo semitransparente */
+    z-index: 9999;
+    display: flex;
+    align-items: center; /* Centrado vertical */
+    justify-content: center; /* Centrado horizontal */
+    margin: 0;
+    padding: 0;
+    }
 
-.loader-bolas {
-  width: 80px;
-  height: 80px;
-  position: relative;
-}
+    .loader-bolas {
+    width: 80px;
+    height: 80px;
+    position: relative;
+    margin: auto; /* Centrado adicional (redundante pero seguro) */
+    }
 
 .loader-bolas::before,
 .loader-bolas::after {
-  content: '';
-  box-sizing: border-box;
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  border: 8px solid #00aaff;
-  border-color: #00aaff transparent transparent transparent;
-  animation: rotateBolas 1.2s linear infinite;
-}
+    content: '';
+    box-sizing: border-box;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 8px solid #00aaff;
+    border-color: #00aaff transparent transparent transparent;
+    animation: rotateBolas 1.2s linear infinite;
+    }
 
-.loader-bolas::after {
-  animation-delay: 0.6s;
-}
+    .loader-bolas::after {
+    animation-delay: 0.6s; /* Retraso para el segundo círculo */
+    }
 
-/* Clase que detiene la animación */
-.stop-animation::before,
-.stop-animation::after {
-  animation: none !important;
-}
-
-@keyframes rotateBolas {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
+    @keyframes rotateBolas {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+    }
 
 /* Apartados principales */
 #apartado-pruebas,
@@ -316,4 +316,3 @@ button img {
     text-align: center;
     margin-bottom: 18px;
 }
-
