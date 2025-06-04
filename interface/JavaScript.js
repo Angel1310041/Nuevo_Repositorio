@@ -65,8 +65,7 @@ function fetchAndDisplayParameters() {
                 4: "4 - Ventana",
                 5: "5 - Cortina",
                 6: "6 - Botón Físico/Pánico",
-                7: "7 - Palanca",
-                9: "9 - Test"
+                7: "7 - Palanca"
             };
 
             const tipoSensorText = tipoSensorMap[data.tipo] || `Tipo desconocido (${data.tipo})`;

@@ -68,7 +68,7 @@ void mostrarImagenPorTipoSensor(int tipoSensor) {
       break;
     case 5:
     case 6:
-      mostrarImagen(img6);
+      mostrarImagen(img2);
       break;
     case 7:
       mostrarImagen(img7);
@@ -90,19 +90,19 @@ void mostrarPantallaPorNumero(int numero) {
     Heltec.display->clear(); 
     switch (numero) {
         case 1:
-            Heltec.display->drawXbm(0, 0, 128, 64, img10);
-            break;
-        case 2:
-            Heltec.display->drawXbm(0, 0, 128, 64, img9);
-            break;
-        case 3:
             Heltec.display->drawXbm(0, 0, 128, 64, img3);
             break;
-        case 4:
+        case 2:
+            Heltec.display->drawXbm(0, 0, 128, 64, img5);
+            break;
+        case 3:
             Heltec.display->drawXbm(0, 0, 128, 64, img8);
             break;
+        case 4:
+            Heltec.display->drawXbm(0, 0, 128, 64, img10);
+            break;
         case 5:
-            Heltec.display->drawXbm(0, 0, 128, 64, img5);
+            Heltec.display->drawXbm(0, 0, 128, 64, img9);
             break;
         case 6:
             Heltec.display->drawXbm(0, 0, 128, 64, img2);
@@ -131,18 +131,26 @@ void manejarEntradas() {
     static unsigned long t = 0, progStart = 0;
     static bool esperandoLiberar = false;
     static bool botonAnterior = HIGH;
-    int mq6 = digitalRead(MQ6_PIN);
+    int lecturaSensor = digitalRead(MQ6_PIN);  // MQ6_PIN en realidad representa cualquier pin de sensor activo
     int progEstado = digitalRead(prog);
     int estadoBoton = digitalRead(BOTON_PRUEBA_PIN);
 
     if (progEstado == LOW) {
         if (!progStart) progStart = millis();
         if (!modoprog && millis() - progStart >= 2000 && !esperandoLiberar) {
-            modoprog = esperandoLiberar = true;
-            entrarmodoprog();
-            mostrarImagen(img4);
-            if (!modoprog) imprimir("Entrando en modo programación...", "cyan");
-        }
+    modoprog = esperandoLiberar = true;
+    entrarmodoprog();
+
+    Heltec.display->clear();
+    Heltec.display->drawXbm(30, 0, 70, 40, img4); // Imagen de fondo
+    Heltec.display->setTextAlignment(TEXT_ALIGN_LEFT);
+    Heltec.display->setFont(ArialMT_Plain_10);
+    Heltec.display->drawString(0, 52, "IP: 192.168.8.28"); // Muestra IP
+    Heltec.display->display();
+
+    if (!modoprog) imprimir("Entrando en modo programación...", "cyan");
+}
+
     } else {
         progStart = 0;
         esperandoLiberar = false;
@@ -150,35 +158,43 @@ void manejarEntradas() {
 
     if (!modoprog) {
         if (millis() - t > 10000) {
-            imprimir("Lectura MQ-6: " + String(mq6));
+            imprimir("Lectura Sensor (" + String(lecturaSensor) + ")");
             t = millis();
         }
 
-        if (mq6 == LOW && !variableDetectada) {
+        // Aquí decides si es LOW o HIGH el valor activo dependiendo del tipo de sensor
+        bool sensorActivo = false;
+        if (activo.tipo == 0) {  // Por ejemplo, MQ6: activa con LOW
+            sensorActivo = (lecturaSensor == LOW);
+        } else {  // Otros sensores (PIR por ejemplo): activan con HIGH
+            sensorActivo = (lecturaSensor == HIGH);
+        }
+
+        if (sensorActivo && !variableDetectada) {
             int mensajeRF = (activo.id * 10000) + (activo.tipo * 1000) + activo.zona;
             Transmisorrf.send(mensajeRF, 32);
             mostrarImagenPorTipoSensor(activo.tipo);
             blinkLed();
             variableDetectada = true;
-            imprimir("¡Gas detectado! Alerta RF enviada: " + String(mensajeRF), "rojo");
-        } else if (mq6 == HIGH) {
+            imprimir("Alerta RF enviada: " + String(mensajeRF), "rojo");
+        } else if (!sensorActivo) {
             variableDetectada = false;
         }
 
         if (estadoBoton == LOW && botonAnterior == HIGH) {
-    if (activo.id != -1 && activo.zona != -1) { 
-        int mensajeRF = (activo.id * 10000) + (9 * 1000) + activo.zona; 
-        Transmisorrf.send(mensajeRF, 32);
-        blinkLed();
-        mostrarImagen(img2);
-        imprimir("Señal RF enviada con datos registrados: " + String(mensajeRF), "verde");
-    } else {
-        imprimir("Error: No hay datos registrados en EEPROM", "rojo");
-    }
-}
+            if (activo.id != -1 && activo.zona != -1) { 
+                int mensajeRF = (activo.id * 10000) + (9 * 1000) + activo.zona; 
+                Transmisorrf.send(mensajeRF, 32);
+                blinkLed();
+                mostrarImagen(img2);
+                imprimir("Señal RF enviada con datos registrados: " + String(mensajeRF), "verde");
+            } else {
+                imprimir("Error: No hay datos registrados en EEPROM", "rojo");
+            }
+        }
         botonAnterior = estadoBoton;
     }
-    
+
     if (!modoprog && imagenMostrada == 2 && millis() - tiempoUltimaImagen >= 10000) {
         mostrarInicio();
     }
